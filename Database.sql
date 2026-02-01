@@ -1,35 +1,32 @@
-DROP DATABASE IF EXISTS test_db;
+#drop database if exists Traffic_Correction_Notices;
+CREATE DATABASE IF NOT EXISTS Traffic_Correction_Notices
+	CHARACTER SET utf8mb4
+	COLLATE utf8mb4_unicode_ci;
+    
+USE Traffic_Correction_Notices;
 
-CREATE DATABASE test_db;
-USE test_db;
+DROP TABLE IF EXISTS Notice;
 
-
-# ----------------------------------------------------------------------tables---------------------------------------------------------------------- #
-
-
-# ---------------------------------------------------------------------- #
-# Add table "test_table"                                                     #
-# ---------------------------------------------------------------------- #
-DROP TABLE IF EXISTS `test_table`;
-CREATE TABLE `test_table` (
-	`id` INT NOT NULL AUTO_INCREMENT,
-    `test_var` INT NOT NULL,
-    `test_var2` INT NOT NULL,
-    CONSTRAINT `pk_test_table` PRIMARY KEY (`id`)
+CREATE TABLE `Notice` (
+	`NoticeID` INT NOT NULL AUTO_INCREMENT COMMENT 'auto increment for each new notice record',	
+    `IndividualID` INT NOT NULL COMMENT 'int for ID number, not null as must have an value for the key',
+    `VehicleID` INT NOT NULL COMMENT 'int for ID number, not null as must have an value for the key',
+    `InformationID` INT NOT NULL COMMENT 'int for ID number, not null as must have an value for the key',
+    `ViolationID` INT NOT NULL COMMENT 'int for ID number, not null as must have an value for the key',
+    `OfficerID` INT NOT NULL COMMENT 'int for ID number, not null as must have an value for the key',
+    `ActionSelection` INT NOT NULL COMMENT 'int for index of each action',
+    `DriversSignature` VARCHAR(40) NOT NULL COMMENT 'limited to 20 chars, for individuals name, update to image in future',
+    CONSTRAINT `pk_Notice` PRIMARY KEY (`NoticeID`)
 );
 
-Insert into `test_table`(test_var, test_var2) 
-values (694202, 14042);
+START TRANSACTION;
 
-Insert into `test_table`(test_var, test_var2) 
-values (3, 4);
+Insert into `Notice`(IndividualID,VehicleID,InformationID,ViolationID,OfficerID,ActionSelection,DriversSignature) 
+values (1,1,1,1,1404,12345,"fuckingworkpls");
 
+COMMIT;
 
-# ----------------------------------------------------------------------Debug---------------------------------------------------------------------- #
-
-
-SHOW DATABASES;
-USE test_db;
-
+USE Traffic_Correction_Notices;
 SHOW TABLES;
-SELECT * FROM `test_table`
+DESCRIBE Notice;
+SELECT * FROM Notice;

@@ -1,5 +1,6 @@
 fastapi
+mysqlclient
 uvicorn
 sqlalchemy
-mysqlclient
-python-multipart
+email-validator
+pymysql
