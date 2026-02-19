@@ -1,9 +1,14 @@
-# app/schemas/user.py
-from pydantic import BaseModel, EmailStr
+# app/schemas/review.py
+from pydantic import BaseModel
+from typing import Optional
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
 
 class UserBase(BaseModel):
-    name: str
-    email: EmailStr
+    Username: str
+    Clearance: str
 
 class UserCreate(UserBase):
     """Schema for creating a new user."""
