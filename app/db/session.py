@@ -1,25 +1,28 @@
-# app/db/session.py
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 
-# Replace username, password, host and database name as needed: i.e, root for
-# username and empty password (no password)
-SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:@localhost:3306/Traffic_Correction_Notices"
+import MySQLdb
 
-# Create the SQLAlchemy engine that manages DB connections.
+# database connection URL for my pc
+#SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:@localhost:3306/Traffic_Correction_Notices"
+# database connection URL for labs pc
+SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:computing@127.0.0.1:3306/Traffic_Correction_Notices"
+
+# create the SQLAlchemy engine that manages DB connections
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
-    pool_pre_ping=True,  # checks connections before using them
+    pool_pre_ping=True,             # checks connections before using them
 )
 
-# Factory for Session objects (database sessions).
+# creates sessions to interact with the database
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def get_db():
-    """Dependency that provides a database session to FastAPI endpoints."""
-    db: Session = SessionLocal()
+    """provides a database session to FastAPI endpoints"""
+    db: Session = SessionLocal()    # create a new database session
+
     try:
-        yield db
-    finally:
+        yield db                    # allow the endpoint to use the database session, and then close it when done
+    finally:                        # ensure the database session is closed after the endpoint is finished
         db.close()
 

@@ -4,3 +4,6 @@ uvicorn
 sqlalchemy
 email-validator
 pymysql
+passlib[bcrypt]
+python-multipart
+PyJWT
