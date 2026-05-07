@@ -1,0 +1,62 @@
+Exercise 1: Build a complete two-portal authenticated SPA
+Extend the Bookstore SPA to support two distinct user roles: a regular user portal and a
+manager portal. The user portal should allow: login, view of personal book list, adding/removing
+books from the list, and profile view. The manager portal (accessible only with role:
+'manager') should allow: viewing all users and their book lists, adding and removing books
+from the catalogue, and a summary statistics dashboard. Requirements:
+• Both portals must live within the same index.html as separate view sections.
+• Role-based access must be enforced client-side using canAccess() and server-side via
+JWT validation in FastAPI.
+• All forms must include client-side validation and display server-side (422) errors.
+• All views must be responsive (mobile, tablet, desktop) and handle loading, empty, and
+error states.
+• A logout function must clear all user state and redirect to the public books list.
+
+Exercise 2: Implement live search with debouncing and server-side filtering
+The current search filters the cached book list client-side. Extend this so that when the cached list
+is empty (first load or after cache invalidation), the search sends a request to a
+/books/search/?q= endpoint on the server. Add a debounce mechanism (setTimeout /
+clearTimeout) so that the API request only fires after the user stops typing for 400
+milliseconds. Requirements:
+• Client-side filter is used when state.books is populated; server-side search is used
+when it is not.
+• Rapid typing must not flood the server with requests (verify in the Network tab).
+• A 'Searching...' message should appear while the server request is in flight.
+• If the server returns an empty array, the empty-state message appears (not a blank box).
+
+Exercise 3: Add an inline edit form to the user profile view
+Build a profile view for the logged-in user that displays their account details (username, email,
+date joined) fetched from GET /users/me. Add an inline edit toggle that replaces the displayed
+email field with an input box. On save, send a PUT /users/me request with the updated email
+and refresh the displayed value. Requirements:
+• The view must start in read-only mode; an Edit button toggles it to edit mode.
+• The PUT request must use authenticatedFetch() with a JSON body.
+• On success, show a toast and return to read-only mode with the new value displayed.
+• On failure (400 or 422), display the error message next to the relevant field.
+• A Cancel button must discard changes and restore the original value without a fetch call.
+CMP2812 – Full Stack Development
+Week 24: Workshop
+Page 48 of 48
+
+Exercise 4: Create a testing and integration evidence document
+Create a file called integration_evidence.md that documents the complete test process
+for your authenticated SPA. For each of the five categories below, describe what you tested, how
+you tested it (browser, DevTools, curl.exe), what passed, and any issues you encountered and
+resolved:
+• Authentication flow: login with valid credentials, invalid credentials, expired token, and
+logout.
+• Authorisation / access control: attempting to access protected views without a token;
+attempting to access role-restricted views with the wrong role.
+• Form validation: client-side required-field and format checks; server-side 422 error
+display.
+• Error handling: server down (network error), 404 not found, 500 internal error each must
+show a user-friendly message.
+• Responsive design: screenshots or descriptions of the layout at 375px, 768px, and 1280px
+viewport widths.
+End of workshop
+Congratulations! You have completed the SPA. Next week (Week 25) you will build on the SPA
+structure from this workshop to handle HTML forms and POST requests including adding the 'Add
+a Review' and 'Create Citation' forms with full client-side validation and live UI updates after
+successful submission. Keep your js/app.js, css/style.css, and SPA structure from this
+week, as they form the foundation for all remaining frontend workshops and for your Assessment
+3 submission.
