@@ -10,6 +10,7 @@ const state = {
     // Auth (used in Assessment 3)
     token: null, // JWT string once logged in
     currentUser: null, // user object { id, username, role }
+    clearance: null, // user clearance level (Officer or Civilian)
 
     // UI
     isLoading: false, // true while any fetch is in progress
@@ -17,6 +18,37 @@ const state = {
 };
 
 window.state = state;
+
+// ── Utility functions
+/**
+ * showToast(message, duration) – displays a temporary toast notification
+ * @param {string} message – the notification text
+ * @param {number} duration – how long to show in milliseconds
+ */
+function showToast(message, duration = 3000) {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+    toast.textContent = message;
+    toast.classList.add('show');
+    // allow pointer events while visible
+    toast.style.pointerEvents = 'auto';
+
+    setTimeout(function() {
+        toast.classList.remove('show');
+        toast.style.pointerEvents = 'none';
+    }, duration);
+}
+
+/**
+ * confirmAction(message, callback) – shows a confirmation dialog
+ * @param {string} message – the confirmation message
+ * @param {function} callback – function to call if user confirms
+ */
+function confirmAction(message, callback) {
+    if (window.confirm(message)) {
+        callback();
+    }
+}
 
 // ── View management
 /**
@@ -75,6 +107,22 @@ function canAccess(route) {
         return false;
     }
 
+    // Officer-only routes
+    const officerRoutes = ['admin-dash', 'admin-management'];
+    if (officerRoutes.includes(route) && !hasOfficerClearance()) {
+        showToast('You do not have permission to access this page.', 3000);
+        navigateTo('user-dash');
+        return false;
+    }
+
+    // Civilian-only routes
+    const civilianRoutes = ['user-dash', 'user-profile'];
+    if (civilianRoutes.includes(route) && !hasCivilianClearance()) {
+        showToast('You do not have permission to access this page.', 3000);
+        navigateTo('admin-dash');
+        return false;
+    }
+
     return true;
 }
 
@@ -98,12 +146,48 @@ function updateNav() {
     }
 }
 
+/**
+ * hasOfficerClearance() – returns true if user has Officer clearance
+ */
+function hasOfficerClearance() {
+    return state.clearance === 'Officer';
+}
+
+/**
+ * hasCivilianClearance() – returns true if user has Civilian clearance
+ */
+function hasCivilianClearance() {
+    return state.clearance === 'Civilian';
+}
+
+/**
+ * updateClearanceUI() – updates the UI to show/hide elements based on user clearance
+ */
+function updateClearanceUI() {
+    const isOfficer = hasOfficerClearance();
+    const isCivilian = hasCivilianClearance();
+    
+    // Update all elements with data-clearance attribute
+    document.querySelectorAll('[data-clearance]').forEach(element => {
+        const requiredClearance = element.dataset.clearance;
+        
+        if (requiredClearance === 'officer' && isOfficer) {
+            element.style.display = '';
+        } else if (requiredClearance === 'civilian' && isCivilian) {
+            element.style.display = '';
+        } else {
+            element.style.display = 'none';
+        }
+    });
+}
+
 function handleLogout() {
     confirmAction(
         'Are you sure you want to log out?',
         function() {
             state.token = null;
             state.currentUser = null;
+            state.clearance = null;
             state.myBooks = [];
             showToast('You have been logged out.');
             navigateTo('info');
@@ -230,10 +314,12 @@ const ROUTE_TO_VIEW = {
     //user views
     'user-dash': 'view-user-dashboard',
     'user-profile': 'view-user-profile',
-	
-	//admin views
-	'admin-dash': 'view-admin-dashboard',
-	'admin-management': 'view-admin-management',
+    'user-logout': 'view-user-logout',
+
+    //admin views
+    'admin-dash': 'view-admin-dashboard',
+    'admin-management': 'view-admin-management',
+    'admin-logout': 'view-admin-logout',
 
 	'logout': 'view-logout'
 };
@@ -255,8 +341,36 @@ function updateActiveNav(route) {
 
 function navigateTo(route) {
     const viewId = ROUTE_TO_VIEW[route] || 'view-info';
+    // update breadcrumb for route
+    switch (route) {
+        case 'info':
+            setBreadcrumb([{ label: 'Home' }, { label: 'Info' }]);
+            break;
+        case 'user-login':
+            setBreadcrumb([{ label: 'Home' }, { label: 'User Login' }]);
+            break;
+        case 'admin-login':
+            setBreadcrumb([{ label: 'Home' }, { label: 'Admin Login' }]);
+            break;
+        case 'user-dash':
+            setBreadcrumb([{ label: 'User' }, { label: 'Dashboard' }]);
+            break;
+        case 'user-profile':
+            setBreadcrumb([{ label: 'User' }, { label: 'Profile' }]);
+            break;
+        case 'admin-dash':
+            setBreadcrumb([{ label: 'Admin' }, { label: 'Dashboard' }]);
+            break;
+        case 'admin-management':
+            setBreadcrumb([{ label: 'Admin' }, { label: 'Management' }]);
+            break;
+        default:
+            setBreadcrumb([{ label: 'Home' }]);
+    }
+
     showView(viewId);
     updateActiveNav(route);
+    updateClearanceUI();
 
     if (route === 'info' || route === 'user-login' || route === 'admin-login' || route === 'logout') {
         setVisibleNav('main-nav');
@@ -278,6 +392,7 @@ function routeFromHash() {
     navigateTo(route);
 }
 
+//! temp login in and out event listeners
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.nav-link').forEach(link => {
         link.addEventListener('click', function(event) {
@@ -290,7 +405,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (userLoginBtn) {
         userLoginBtn.addEventListener('click', function() {
 			handleLogin('user');
-            //navigateTo('user-login');
         });
     }
 
@@ -298,7 +412,23 @@ document.addEventListener('DOMContentLoaded', function() {
     if (adminLoginBtn) {
         adminLoginBtn.addEventListener('click', function() {
 			handleLogin('admin');
-            //navigateTo('admin-login');
+        });
+    }
+
+    // Add logout button listeners
+    const userLogoutBtn = document.querySelector('a[data-view="user-logout"]');
+    if (userLogoutBtn) {
+        userLogoutBtn.addEventListener('click', function(event) {
+            event.preventDefault();
+            handleLogout();
+        });
+    }
+
+    const adminLogoutBtn = document.querySelector('a[data-view="admin-logout"]');
+    if (adminLogoutBtn) {
+        adminLogoutBtn.addEventListener('click', function(event) {
+            event.preventDefault();
+            handleLogout();
         });
     }
 
@@ -307,15 +437,101 @@ document.addEventListener('DOMContentLoaded', function() {
     routeFromHash();
 });
 
-function handleLogin(role) {
-	if (role === 'user') {
-		setVisibleNav('user-nav');
-		navigateTo('user-dash');
-		return;
-	}
+function handleLogin(loginRole) {
+    // get the appropriate login view based on role
+    const loginView = document.getElementById(loginRole === 'admin' ? 'view-admin-login' : 'view-user-login');
+    if (!loginView) {
+        return;
+    }
 
-	if (role === 'admin') {
-		setVisibleNav('admin-nav');
-		navigateTo('admin-dash');
-	}
+    // Extract username and password from the login form
+    const usernameInput = loginView.querySelector('#login-username');
+    const passwordInput = loginView.querySelector('#login-password');
+    const errorText = loginView.querySelector('#login-error');
+    const username = usernameInput ? usernameInput.value.trim() : '';
+    const password = passwordInput ? passwordInput.value : '';
+
+    // Clear previous error message
+    if (errorText) {
+        errorText.textContent = '';
+    }
+
+    // check for empty fields
+    if (!username || !password) {
+        if (errorText) {
+            errorText.textContent = 'Please enter both username and password.';
+        }
+        return;
+    }
+
+    // get clearance of account (send credentials via query string for GET)
+        const clearanceUrl = API_URL + '/user/clearance?username=' + encodeURIComponent(username)
+            + '&password=' + encodeURIComponent(password);
+
+        // Sequence: get clearance -> verify role -> request token
+        fetch(clearanceUrl)
+        .then(function(response) {
+            return response.json().then(function(data) {
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Failed to get clearance');
+                }
+                return data;
+            });
+        })
+        .then(function(clearanceData) {
+            state.clearance = clearanceData.clearance;
+
+            // check clearance matches login role
+            if (loginRole === 'admin' && state.clearance !== 'Officer') {
+                throw new Error('Account does not have admin clearance');
+            }
+            if (loginRole === 'user' && state.clearance !== 'Civilian') {
+                throw new Error('Account does not have user clearance');
+            }
+
+            // Attempt login via API
+            return fetch(API_URL + '/user/token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams({
+                    username: username,
+                    password: password
+                })
+            });
+        })
+        .then(function(response) {
+            return response.json().then(function(data) {
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Login failed');
+                }
+                return data;
+            });
+        })
+        .then(function(data) {
+            state.token = data.access_token;
+            state.currentUser = {
+                username: username,
+                clearance: data.clearance
+            };
+
+            // Navigate based on clearance level
+            if (data.clearance === 'Officer') {
+                setVisibleNav('admin-nav');
+                navigateTo('admin-dash');
+            } else if (data.clearance === 'Civilian') {
+                setVisibleNav('user-nav');
+                navigateTo('user-dash');
+            } else {
+                showToast('Unknown user role', 3000);
+                navigateTo('info');
+            }
+        })
+        .catch(function(error) {
+            if (errorText) {
+                errorText.textContent = error.message;
+            }
+            showToast(error.message, 3000);
+        });
 }

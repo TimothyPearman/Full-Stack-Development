@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from typing import List, Annotated
 
 from app.db.session import get_db
-from app.schemas.user import User, Token
+from app.schemas.user import User, Token, Clearance
 from app.crud import user as crud_user
 from app.core.security import create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
 from app.core.token import revoke_token as denylist_revoke_token
@@ -54,6 +54,7 @@ async def issue_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
         "access_token": access_token,
         "token_type": "bearer",
         "expires_in": ACCESS_TOKEN_EXPIRE_MINUTES,
+        "clearance": user.Clearance,
     }
 
 @router.put("/token", response_model=Token, summary="refresh token")
@@ -75,4 +76,20 @@ async def revoke_token(token: str = Depends(oauth2_scheme), db: Session = Depend
     
     denylist_revoke_token(token)                                                        # add token to denylist
     
-    return {"message": "Token revoked successfully"} 
+    return {"message": "Token revoked successfully"}
+
+@router.get("/clearance", response_model=Clearance, summary="get user clearance")
+async def get_clearance(username: str, password: str, db: Session = Depends(get_db)):
+    """get user clearance level by username and password"""
+    user = crud_user.authenticate_user(db, username, password)      # authenticate user
+    
+    if not user:                                                                        # check user exists and password is correct
+        raise HTTPException(
+            status_code=401,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    return {
+        "clearance": user.Clearance,
+    } 

@@ -7,6 +7,7 @@ class Token(BaseModel):
     access_token: str
     token_type: str
     expires_in: int
+    clearance: str
 
 class UserBase(BaseModel):
     """base schema for a user"""
@@ -19,3 +20,7 @@ class User(UserBase):
 
     class Config:
         from_attributes = True
+
+class Clearance(BaseModel):
+    """schema for clearance response"""
+    clearance: str

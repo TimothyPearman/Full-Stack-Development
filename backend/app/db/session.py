@@ -14,7 +14,7 @@ def get_database_url() -> str:
     database_port = os.getenv("DB_PORT", "3306")
     database_user = quote_plus(os.getenv("DB_USER", "root"))
     database_password = quote_plus(os.getenv("DB_PASSWORD", ""))
-    database_name = quote_plus(os.getenv("DB_NAME", "CompuTaught"))
+    database_name = quote_plus(os.getenv("DB_NAME", "Traffic_Correction_Notices"))
 
     return (
         f"mysql+pymysql://{database_user}:{database_password}"
