@@ -3,9 +3,10 @@ const API_URL = 'http://127.0.0.1:8000';
 // ── Application state
 const state = {
     // Data
-    books: [], // cached book list
-    myBooks: [], // cached current user's books
-    currentBookId: null, // id of book currently in detail view
+    notices: [], // cached list of traffic correction notices
+    //books: [], // cached book list
+    //myBooks: [], // cached current user's books
+    //currentBookId: null, // id of book currently in detail view
 
     // Auth (used in Assessment 3)
     token: null, // JWT string once logged in
@@ -37,17 +38,6 @@ function showToast(message, duration = 3000) {
         toast.classList.remove('show');
         toast.style.pointerEvents = 'none';
     }, duration);
-}
-
-/**
- * confirmAction(message, callback) – shows a confirmation dialog
- * @param {string} message – the confirmation message
- * @param {function} callback – function to call if user confirms
- */
-function confirmAction(message, callback) {
-    if (window.confirm(message)) {
-        callback();
-    }
 }
 
 // ── View management
@@ -126,26 +116,6 @@ function canAccess(route) {
     return true;
 }
 
-function updateNav() {
-    const logoutBtn = document.getElementById('logout-btn');
-    const loginLink = document.querySelector('[data-view="login"]');
-    if (!logoutBtn) {
-        return;
-    }
-
-    if (state.currentUser) {
-        logoutBtn.style.display = 'inline-block';
-        if (loginLink) {
-            loginLink.style.display = 'none';
-        }
-    } else {
-        logoutBtn.style.display = 'none';
-        if (loginLink) {
-            loginLink.style.display = 'inline-block';
-        }
-    }
-}
-
 /**
  * hasOfficerClearance() – returns true if user has Officer clearance
  */
@@ -158,41 +128,6 @@ function hasOfficerClearance() {
  */
 function hasCivilianClearance() {
     return state.clearance === 'Civilian';
-}
-
-/**
- * updateClearanceUI() – updates the UI to show/hide elements based on user clearance
- */
-function updateClearanceUI() {
-    const isOfficer = hasOfficerClearance();
-    const isCivilian = hasCivilianClearance();
-    
-    // Update all elements with data-clearance attribute
-    document.querySelectorAll('[data-clearance]').forEach(element => {
-        const requiredClearance = element.dataset.clearance;
-        
-        if (requiredClearance === 'officer' && isOfficer) {
-            element.style.display = '';
-        } else if (requiredClearance === 'civilian' && isCivilian) {
-            element.style.display = '';
-        } else {
-            element.style.display = 'none';
-        }
-    });
-}
-
-function handleLogout() {
-    confirmAction(
-        'Are you sure you want to log out?',
-        function() {
-            state.token = null;
-            state.currentUser = null;
-            state.clearance = null;
-            state.myBooks = [];
-            showToast('You have been logged out.');
-            navigateTo('info');
-        }
-    );
 }
 
 // ── Router
@@ -222,54 +157,52 @@ function navigateTo(route, params = {}) {
     });
 
     // Route to the correct view
+    const viewId = ROUTE_TO_VIEW[route] || 'view-info';
     switch (route) {
-		// landing page view
         case 'info':
             setBreadcrumb([{ label: 'Home' }, { label: 'Info' }]);
-            showView('view-list');
-            loadBookList(); // defined in Task 10
             break;
         case 'user-login':
             setBreadcrumb([{ label: 'Home' }, { label: 'User Login' }]);
-            showView('view-my-books');
-            loadMyBooks();
             break;
         case 'admin-login':
             setBreadcrumb([{ label: 'Home' }, { label: 'Admin Login' }]);
-            showView('view-dashboard');
-            loadDashboard();
             break;
 
-		// user views
         case 'user-dash':
-            setBreadcrumb([{ label: 'User' },{ label: 'Dashboard' }
-            ]);
-            showView('view-user-dash');
+            setBreadcrumb([{ label: 'User' }, { label: 'Dashboard' }]);
             break;
         case 'user-profile':
-            setBreadcrumb([{ label: 'User' },{ label: 'Profile' }
-            ]);
-            showView('view-user-profile');
-            //loadBookDetail(params.id); // defined in Task 12
+            setBreadcrumb([{ label: 'User' }, { label: 'Profile' }]);
             break;
 
-		// admin views
         case 'admin-dash':
             setBreadcrumb([{ label: 'Admin' }, { label: 'Dashboard' }]);
-            showView('view-admin-dash');
             break;
         case 'admin-management':
             setBreadcrumb([{ label: 'Admin' }, { label: 'Management' }]);
-            showView('view-admin-management');
             break;
-
-
+            
         default:
-            console.warn('navigateTo: unknown route "' + route + '"');
-            navigateTo('info'); // fallback
+            setBreadcrumb([{ label: 'Home' }]);
     }
 
-    updateNav();
+    showView(viewId);
+    updateActiveNav(route);
+
+    if (route === 'info' || route === 'user-login' || route === 'admin-login' || route === 'logout') {
+        setVisibleNav('main-nav');
+        return;
+    }
+
+    if (route === 'user-dash' || route === 'user-profile') {
+        setVisibleNav('user-nav');
+        return;
+    }
+
+    if (route === 'admin-dash' || route === 'admin-management') {
+        setVisibleNav('admin-nav');
+    }
 }
 
 // ── Hash-based routing
@@ -303,7 +236,26 @@ window.addEventListener('popstate', function(event) {
     }
 });
 
-// Boot the SPA
+// Sets visibility of nav bars based on current route
+function setVisibleNav(navId) {
+    // Show the nav bar matching navId, hide the others
+    ['main-nav', 'user-nav', 'admin-nav'].forEach(id => {
+        const nav = document.getElementById(id);
+        if (nav) {
+            nav.style.display = id === navId ? 'flex' : 'none';
+        }
+    });
+}
+
+// Updates the 'active' class on nav links based on the current route
+function updateActiveNav(route) {
+    // Toggle 'active' class on nav links based on their data-view matching the current route
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.classList.toggle('active', link.dataset.view === route);
+    });
+}
+
+// Map of route names to view IDs
 const ROUTE_TO_VIEW = {
 	'info': 'view-info',
 	
@@ -324,81 +276,23 @@ const ROUTE_TO_VIEW = {
 	'logout': 'view-logout'
 };
 
-function setVisibleNav(navId) {
-    ['main-nav', 'user-nav', 'admin-nav'].forEach(id => {
-        const nav = document.getElementById(id);
-        if (nav) {
-            nav.style.display = id === navId ? 'flex' : 'none';
-        }
-    });
-}
-
-function updateActiveNav(route) {
-    document.querySelectorAll('.nav-link').forEach(link => {
-        link.classList.toggle('active', link.dataset.view === route);
-    });
-}
-
-function navigateTo(route) {
-    const viewId = ROUTE_TO_VIEW[route] || 'view-info';
-    // update breadcrumb for route
-    switch (route) {
-        case 'info':
-            setBreadcrumb([{ label: 'Home' }, { label: 'Info' }]);
-            break;
-        case 'user-login':
-            setBreadcrumb([{ label: 'Home' }, { label: 'User Login' }]);
-            break;
-        case 'admin-login':
-            setBreadcrumb([{ label: 'Home' }, { label: 'Admin Login' }]);
-            break;
-        case 'user-dash':
-            setBreadcrumb([{ label: 'User' }, { label: 'Dashboard' }]);
-            break;
-        case 'user-profile':
-            setBreadcrumb([{ label: 'User' }, { label: 'Profile' }]);
-            break;
-        case 'admin-dash':
-            setBreadcrumb([{ label: 'Admin' }, { label: 'Dashboard' }]);
-            break;
-        case 'admin-management':
-            setBreadcrumb([{ label: 'Admin' }, { label: 'Management' }]);
-            break;
-        default:
-            setBreadcrumb([{ label: 'Home' }]);
-    }
-
-    showView(viewId);
-    updateActiveNav(route);
-    updateClearanceUI();
-
-    if (route === 'info' || route === 'user-login' || route === 'admin-login' || route === 'logout') {
-        setVisibleNav('main-nav');
-        return;
-    }
-
-    if (route === 'user-dash' || route === 'user-profile') {
-        setVisibleNav('user-nav');
-        return;
-    }
-
-    if (route === 'admin-dash' || route === 'admin-management') {
-        setVisibleNav('admin-nav');
-    }
-}
-
-function routeFromHash() {
-    const route = window.location.hash.slice(1) || 'info';
-    navigateTo(route);
-}
-
-//! temp login in and out event listeners
+// Wait for DOM to load
 document.addEventListener('DOMContentLoaded', function() {
+    // attach click listeners to nav links
     document.querySelectorAll('.nav-link').forEach(link => {
-        link.addEventListener('click', function(event) {
-            event.preventDefault();
-            window.location.hash = this.dataset.view || 'info';
-        });
+            link.addEventListener('click', function(event) {
+
+                // Do not change the hash for logout links here
+                if (this.id && this.id.includes('logout')) {
+                    return;
+                }
+
+                // Prevent default link behavior that changes the hash immediately and bypasses the navigateTo logic
+                event.preventDefault();
+                // Update URL hash, which triggers routeFromHash and navigateTo
+                // if data-view is not set, default to 'info'
+                window.location.hash = this.dataset.view || 'info';
+            });
     });
 
     const userLoginBtn = document.getElementById('user-login-btn');
@@ -416,7 +310,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Add logout button listeners
-    const userLogoutBtn = document.querySelector('a[data-view="user-logout"]');
+    const userLogoutBtn = document.querySelector('a[id="user-logout-btn"]');
     if (userLogoutBtn) {
         userLogoutBtn.addEventListener('click', function(event) {
             event.preventDefault();
@@ -424,7 +318,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    const adminLogoutBtn = document.querySelector('a[data-view="admin-logout"]');
+    const adminLogoutBtn = document.querySelector('a[id="admin-logout-btn"]');
     if (adminLogoutBtn) {
         adminLogoutBtn.addEventListener('click', function(event) {
             event.preventDefault();
@@ -437,6 +331,7 @@ document.addEventListener('DOMContentLoaded', function() {
     routeFromHash();
 });
 
+// Authentication handlers
 function handleLogin(loginRole) {
     // get the appropriate login view based on role
     const loginView = document.getElementById(loginRole === 'admin' ? 'view-admin-login' : 'view-user-login');
@@ -516,6 +411,9 @@ function handleLogin(loginRole) {
                 clearance: data.clearance
             };
 
+            // logged in message
+            showToast('You have been logged in successfully.');
+
             // Navigate based on clearance level
             if (data.clearance === 'Officer') {
                 setVisibleNav('admin-nav');
@@ -534,4 +432,31 @@ function handleLogin(loginRole) {
             }
             showToast(error.message, 3000);
         });
+}
+
+// Logout handler
+function handleLogout() {
+    confirmAction(
+        'Are you sure you want to log out?',
+        function() {
+            state.token = null;
+            state.currentUser = null;
+            state.clearance = null;
+            state.myBooks = [];
+            showToast('You have been logged out.');
+            navigateTo('info');
+            updateActiveNav('info');
+        }
+    );
+}
+
+/**
+ * confirmAction(message, callback) – shows a confirmation dialog
+ * @param {string} message – the confirmation message
+ * @param {function} callback – function to call if user confirms
+ */
+function confirmAction(message, callback) {
+    if (window.confirm(message)) {
+        callback();
+    }
 }
