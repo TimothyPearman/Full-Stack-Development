@@ -11,7 +11,7 @@ DEFAULT_SECRET_KEY = "secret-key-making-this-longer-becuase-it-needs-to-be-32-by
 
 SECRET_KEY = os.getenv("SECRET_KEY", DEFAULT_SECRET_KEY)                                    # secret key used for signing JWT tokens
 ALGORITHM = "HS256"                                                                         # algorithm used for signing JWT tokens
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1"))            # token lifetime
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "15"))            # token lifetime
 
 def create_access_token(user_id: int):
     """Create a JWT access token for a given user id"""

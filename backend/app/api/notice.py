@@ -48,7 +48,16 @@ async def get_notices(token: str = Depends(oauth2_scheme), db: Session = Depends
     """Get all notices for the authenticated user."""
     user = check_valid_user(token, db)
 
-    notices = crud_notice.get_notices_for_individual(db, user.id)   # get all notices for the authenticated user using their user id as the individual id
+    # get user clearance level to determine which notices they are allowed to see
+    clearance = get_user_clearance(user, db)
+
+    if clearance == "Officer":                                                   # if user is an officer, they can see all notices
+        notices = crud_notice.get_all_notices(db)
+    elif clearance == "Civilian":                                                   # if user is a civilian, they can only see notices issued to them
+        notices = crud_notice.get_notices_for_individual(db, user.id)   # get all notices for the authenticated user using their user id as the individual id
+    else :
+        raise HTTPException(status_code=403, detail="Invalid clearance level: only officers and civilians can view notices")
+    
     return notices
 
 @router.get("/me/vehicle/{vehicle_id}", response_model=List[FullNotice], summary="Get all notices for a specific vehicle")

@@ -40,6 +40,25 @@ function showToast(message, duration = 3000) {
     }, duration);
 }
 
+function setBreadcrumb(crumbs) {
+    // crumbs: array of {label, route, params} objects
+    // Last crumb is current page (not a link)
+    const bc = document.getElementById('breadcrumb');
+    if (!bc) {
+        return;
+    }
+
+    bc.innerHTML = crumbs.map((crumb, i) => {
+        if (i === crumbs.length - 1) {
+            return '<span>' + crumb.label + '</span>'; // current page
+        }
+        const route = crumb.route || 'list';
+        const params = crumb.params ? JSON.stringify(crumb.params).replace(/"/g, '&quot;') : '{}';
+        return '<a href="#" onclick="navigateTo(\'' + route + '\', ' + params + ')">' +
+            crumb.label + '</a>';
+    }).join('<span class="crumb-sep">&rsaquo;</span>');
+}
+
 // ── View management
 /**
  * showView(viewId) – hides all views, then reveals the one requested.
@@ -60,32 +79,13 @@ function showView(viewId) {
     }
 }
 
-function setBreadcrumb(crumbs) {
-    // crumbs: array of {label, route, params} objects
-    // Last crumb is current page (not a link)
-    const bc = document.getElementById('breadcrumb');
-    if (!bc) {
-        return;
-    }
-
-    bc.innerHTML = crumbs.map((crumb, i) => {
-        if (i === crumbs.length - 1) {
-            return '<span>' + crumb.label + '</span>'; // current page
-        }
-        const route = crumb.route || 'list';
-        const params = crumb.params ? JSON.stringify(crumb.params).replace(/"/g, '&quot;') : '{}';
-        return '<a href="#" onclick="navigateTo(\'' + route + '\', ' + params + ')">' +
-            crumb.label + '</a>';
-    }).join('<span class="crumb-sep">&rsaquo;</span>');
-}
-
 /**
  * canAccess(route) – returns true if the current state allows
  * the user to access the given route.
  */
 function canAccess(route) {
     // Public routes: accessible without a token
-    const publicRoutes = ['info', 'user-login', 'admin-login'];
+    const publicRoutes = ['info', 'login', 'register', 'user-login', 'admin-login'];
     if (publicRoutes.includes(route)) {
         return true;
     }
@@ -159,9 +159,19 @@ function navigateTo(route, params = {}) {
     // Route to the correct view
     const viewId = ROUTE_TO_VIEW[route] || 'view-info';
     switch (route) {
+        // ! could map breadcrumbs like in the ROUTE_TO_VIEW object instead of hardcoding here
+        // landing routes
         case 'info':
             setBreadcrumb([{ label: 'Home' }, { label: 'Info' }]);
             break;
+        case 'register':
+            setBreadcrumb([{ label: 'Home' }, { label: 'Register' }]);
+            break;
+        case 'login':
+            setBreadcrumb([{ label: 'Home' }, { label: 'Login' }]);
+            break;
+
+        // login routes
         case 'user-login':
             setBreadcrumb([{ label: 'Home' }, { label: 'User Login' }]);
             break;
@@ -169,13 +179,16 @@ function navigateTo(route, params = {}) {
             setBreadcrumb([{ label: 'Home' }, { label: 'Admin Login' }]);
             break;
 
+        // user routes
         case 'user-dash':
             setBreadcrumb([{ label: 'User' }, { label: 'Dashboard' }]);
             break;
         case 'user-profile':
             setBreadcrumb([{ label: 'User' }, { label: 'Profile' }]);
+            loadUserProfile();
             break;
 
+        // admin routes
         case 'admin-dash':
             setBreadcrumb([{ label: 'Admin' }, { label: 'Dashboard' }]);
             break;
@@ -190,8 +203,13 @@ function navigateTo(route, params = {}) {
     showView(viewId);
     updateActiveNav(route);
 
-    if (route === 'info' || route === 'user-login' || route === 'admin-login' || route === 'logout') {
+    if (route === 'info' || route === 'register' || route === 'logout') {
         setVisibleNav('main-nav');
+        return;
+    }
+
+    if (route === 'login' || route === 'user-login' || route === 'admin-login') {
+        setVisibleNav(['main-nav', 'login-nav']);
         return;
     }
 
@@ -204,6 +222,31 @@ function navigateTo(route, params = {}) {
         setVisibleNav('admin-nav');
     }
 }
+
+// Map of route names to view IDs
+const ROUTE_TO_VIEW = {
+	// landing page views
+    'info': 'view-info',
+	'register': 'view-register',
+    'login': 'view-login',
+    //'login': 'view-user-login', // default login view
+
+    // login views
+    'user-login': 'view-user-login',
+    'admin-login': 'view-admin-login',
+
+    // user views
+    'user-dash': 'view-user-dashboard',
+    'user-profile': 'view-user-profile',
+    'user-logout': 'view-user-logout',
+
+    // admin views
+    'admin-dash': 'view-admin-dashboard',
+    'admin-management': 'view-admin-management',
+    'admin-logout': 'view-admin-logout',
+
+	'logout': 'view-logout'
+};
 
 // ── Hash-based routing
 /**
@@ -237,12 +280,14 @@ window.addEventListener('popstate', function(event) {
 });
 
 // Sets visibility of nav bars based on current route
-function setVisibleNav(navId) {
-    // Show the nav bar matching navId, hide the others
-    ['main-nav', 'user-nav', 'admin-nav'].forEach(id => {
+function setVisibleNav(navIds) {
+    const visibleNavs = Array.isArray(navIds) ? navIds : [navIds];
+
+    // Show selected nav bars, hide the others
+    ['main-nav', 'login-nav', 'user-nav', 'admin-nav'].forEach(id => {
         const nav = document.getElementById(id);
         if (nav) {
-            nav.style.display = id === navId ? 'flex' : 'none';
+            nav.style.display = visibleNavs.includes(id) ? 'flex' : 'none';
         }
     });
 }
@@ -254,27 +299,6 @@ function updateActiveNav(route) {
         link.classList.toggle('active', link.dataset.view === route);
     });
 }
-
-// Map of route names to view IDs
-const ROUTE_TO_VIEW = {
-	'info': 'view-info',
-	
-    //landing page views
-    'user-login': 'view-user-login',
-    'admin-login': 'view-admin-login',
-
-    //user views
-    'user-dash': 'view-user-dashboard',
-    'user-profile': 'view-user-profile',
-    'user-logout': 'view-user-logout',
-
-    //admin views
-    'admin-dash': 'view-admin-dashboard',
-    'admin-management': 'view-admin-management',
-    'admin-logout': 'view-admin-logout',
-
-	'logout': 'view-logout'
-};
 
 // Wait for DOM to load
 document.addEventListener('DOMContentLoaded', function() {
@@ -309,6 +333,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    const userRegisterBtn = document.getElementById('user-register-btn');
+    if (userRegisterBtn) {
+        userRegisterBtn.addEventListener('click', function() {
+            handleRegister();
+        });
+    }
+
     // Add logout button listeners
     const userLogoutBtn = document.querySelector('a[id="user-logout-btn"]');
     if (userLogoutBtn) {
@@ -323,6 +354,13 @@ document.addEventListener('DOMContentLoaded', function() {
         adminLogoutBtn.addEventListener('click', function(event) {
             event.preventDefault();
             handleLogout();
+        });
+    }
+
+    const profileUpdateBtn = document.getElementById('profile-update-btn');
+    if (profileUpdateBtn) {
+        profileUpdateBtn.addEventListener('click', function() {
+            handleUpdateUserContactInfo();
         });
     }
 
@@ -359,12 +397,19 @@ function handleLogin(loginRole) {
         return;
     }
 
-    // get clearance of account (send credentials via query string for GET)
-        const clearanceUrl = API_URL + '/user/clearance?username=' + encodeURIComponent(username)
-            + '&password=' + encodeURIComponent(password);
-
-        // Sequence: get clearance -> verify role -> request token
-        fetch(clearanceUrl)
+    // Sequence: get clearance -> verify role -> request token
+    // get clearance of account 
+    fetch(API_URL + '/user/clearance', {
+        method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams({
+                    username: username,
+                    password: password
+                })
+            })
+        // Handle response
         .then(function(response) {
             return response.json().then(function(data) {
                 if (!response.ok) {
@@ -376,7 +421,7 @@ function handleLogin(loginRole) {
         .then(function(clearanceData) {
             state.clearance = clearanceData.clearance;
 
-            // check clearance matches login role
+            // verify clearance matches login role
             if (loginRole === 'admin' && state.clearance !== 'Officer') {
                 throw new Error('Account does not have admin clearance');
             }
@@ -384,7 +429,7 @@ function handleLogin(loginRole) {
                 throw new Error('Account does not have user clearance');
             }
 
-            // Attempt login via API
+            // request login token
             return fetch(API_URL + '/user/token', {
                 method: 'POST',
                 headers: {
@@ -396,6 +441,7 @@ function handleLogin(loginRole) {
                 })
             });
         })
+        // Handle response
         .then(function(response) {
             return response.json().then(function(data) {
                 if (!response.ok) {
@@ -404,6 +450,7 @@ function handleLogin(loginRole) {
                 return data;
             });
         })
+        // Store token and user info in state
         .then(function(data) {
             state.token = data.access_token;
             state.currentUser = {
@@ -412,7 +459,7 @@ function handleLogin(loginRole) {
             };
 
             // logged in message
-            showToast('You have been logged in successfully.');
+            showToast('You have successfully logged in.');
 
             // Navigate based on clearance level
             if (data.clearance === 'Officer') {
@@ -448,6 +495,264 @@ function handleLogout() {
             updateActiveNav('info');
         }
     );
+}
+
+// Registration handler
+function handleRegister() {
+    // get the registration view
+    const registerView = document.getElementById('view-register');
+    if (!registerView) {
+        return;
+    }
+
+    // Extract fields from the registration form
+    const usernameInput = registerView.querySelector('#register-username');
+    const passwordInput = registerView.querySelector('#register-password');
+    const passwordConfirmInput = registerView.querySelector('#register-password-confirm');
+    // personal information fields
+    const fullNameInput = registerView.querySelector('#register-full-name');
+    const dateOfBirthInput = registerView.querySelector('#register-dob');
+    const currentAddressInput = registerView.querySelector('#register-address');
+    // drivers license details fields
+    const driverLicenseNumberInput = registerView.querySelector('#register-license-number');
+    const postcodeInput = registerView.querySelector('#register-license-postcode');
+    const nationalInsuranceInput = registerView.querySelector('#register-ni-number');
+    // vehicle registration details fields
+    const vehicleRegNumberInput = registerView.querySelector('#register-vehicle-registration');
+    // contact information fields
+    const emailInput = registerView.querySelector('#register-email');
+    const phoneInput = registerView.querySelector('#register-phone');
+
+
+    const errorText = registerView.querySelector('#register-error');
+
+    // Map input elements to field names
+    const inputElements = {
+        username: usernameInput,
+        password: passwordInput,
+        passwordConfirm: passwordConfirmInput,
+        fullName: fullNameInput,
+        dateOfBirth: dateOfBirthInput,
+        currentAddress: currentAddressInput,
+        driverLicenseNumber: driverLicenseNumberInput,
+        postcode: postcodeInput,
+        nationalInsurance: nationalInsuranceInput,
+        vehicleRegNumber: vehicleRegNumberInput,
+        email: emailInput,
+        phone: phoneInput
+    };
+
+    // Fields that should be trimmed
+    const fieldsToTrim = [
+        'username', 'password', 'fullName', 'currentAddress',
+        'driverLicenseNumber', 'postcode', 'nationalInsurance',
+        'vehicleRegNumber', 'email', 'phone'
+    ];
+
+    // Extract and format all values
+    const formData = {};
+    Object.entries(inputElements).forEach(([key, element]) => {
+        if (element) {
+            formData[key] = fieldsToTrim.includes(key) ? element.value.trim() : element.value;
+        } else {
+            formData[key] = '';
+        }
+    });
+
+    // Add defaults
+    formData.clearance = 'Civilian';
+
+    // Clear previous error message
+    if (errorText) {
+        errorText.textContent = '';
+    }
+
+    // check for empty required fields
+    if (!formData.username || !formData.password || !formData.passwordConfirm) {
+        if (errorText) {
+            errorText.textContent = 'Please fill in all fields.';
+        }
+        return;
+    }
+
+    // check if passwords match
+    if (formData.password !== formData.passwordConfirm) {
+        if (errorText) {
+            errorText.textContent = 'Passwords do not match.';
+        }
+        return;
+    }
+
+    // Submit registration form
+    fetch(API_URL + '/user/create', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: new URLSearchParams({
+            username: formData.username,
+            password: formData.password,
+            clearance: formData.clearance,
+            fullName: formData.fullName,
+            dateOfBirth: formData.dateOfBirth,
+            currentAddress: formData.currentAddress,
+            driverLicenseNumber: formData.driverLicenseNumber,
+            postcode: formData.postcode,
+            nationalInsurance: formData.nationalInsurance,
+            vehicleRegNumber: formData.vehicleRegNumber,
+            email: formData.email,
+            phone: formData.phone
+        })
+    })
+    .then(function(response) {
+        return response.json().then(function(data) {
+            if (!response.ok) {
+                throw new Error(data.detail || 'Registration failed');
+            }
+            return data;
+        });
+    })
+    .then(function(data) {
+        showToast('Registration successful! You can now log in.');
+        navigateTo('login');
+    })
+    .catch(function(error) {
+        if (errorText) {
+            errorText.textContent = error.message;
+        }
+        showToast(error.message, 3000);
+    });
+}
+
+// Profile handler
+function loadUserProfile() {
+    // Check if user is authenticated
+    if (!state.token) {
+        showToast('Please log in to view your profile.', 3000);
+        navigateTo('user-login');
+        return;
+    }
+
+    const profileLoading = document.getElementById('profile-loading');
+    const profileContent = document.getElementById('profile-content');
+    const profileError = document.getElementById('profile-error');
+
+    // Show loading state
+    if (profileLoading) profileLoading.style.display = 'block';
+    if (profileContent) profileContent.style.display = 'none';
+    if (profileError) profileError.textContent = '';
+
+    // Fetch user profile
+    fetch(API_URL + '/user/get', {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${state.token}`
+        }
+    })
+    .then(function(response) {
+        return response.json().then(function(data) {
+            if (!response.ok) {
+                throw new Error(data.detail || 'Failed to load profile');
+            }
+            return data;
+        });
+    })
+    .then(function(data) {
+        // Format date if it exists
+        let dobDisplay = '-';
+        if (data.DateOFBirth) {
+            const dobDate = new Date(data.DateOFBirth);
+            dobDisplay = dobDate.toLocaleDateString();
+        }
+
+        // Populate profile fields
+        document.getElementById('profile-username').textContent = data.Username || '-';
+        document.getElementById('profile-clearance').textContent = data.Clearance || '-';
+        document.getElementById('profile-fullname').textContent = data.FullName || '-';
+        document.getElementById('profile-dob').textContent = dobDisplay;
+        document.getElementById('profile-address').textContent = data.CurrentAddress || '-';
+        document.getElementById('profile-license-number').textContent = data.LicenseNumber || '-';
+        document.getElementById('profile-license-postcode').textContent = data.licensePostcode || '-';
+        document.getElementById('profile-ni-number').textContent = data.NationalInsuranceNumber || '-';
+        document.getElementById('profile-registration-number').textContent = data.RegistrationNumber || '-';
+        document.getElementById('profile-email').textContent = data.Email || '-';
+        document.getElementById('profile-phone').textContent = data.PhoneNumber || '-';
+        const profileEmailInput = document.getElementById('profile-email-input');
+        const profilePhoneInput = document.getElementById('profile-phone-input');
+        if (profileEmailInput) profileEmailInput.value = data.Email || '';
+        if (profilePhoneInput) profilePhoneInput.value = data.PhoneNumber || '';
+
+        // Show content, hide loading
+        if (profileLoading) profileLoading.style.display = 'none';
+        if (profileContent) profileContent.style.display = 'block';
+    })
+    .catch(function(error) {
+        if (profileLoading) profileLoading.style.display = 'none';
+        if (profileError) {
+            profileError.textContent = error.message;
+        }
+        showToast(error.message, 3000);
+    });
+}
+
+function handleUpdateUserContactInfo() {
+    if (!state.token) {
+        showToast('Please log in to update your profile.', 3000);
+        navigateTo('user-login');
+        return;
+    }
+
+    const profileError = document.getElementById('profile-error');
+    const profileEmailInput = document.getElementById('profile-email-input');
+    const profilePhoneInput = document.getElementById('profile-phone-input');
+    const email = profileEmailInput ? profileEmailInput.value.trim() : '';
+    const phone = profilePhoneInput ? profilePhoneInput.value.trim() : '';
+
+    if (profileError) {
+        profileError.textContent = '';
+    }
+
+    if (!email && !phone) {
+        if (profileError) {
+            profileError.textContent = 'Enter an email address or phone number to update.';
+        }
+        return;
+    }
+
+    const body = new URLSearchParams();
+    if (email) {
+        body.append('email', email);
+    }
+    if (phone) {
+        body.append('phone', phone);
+    }
+
+    fetch(API_URL + '/user/update', {
+        method: 'PUT',
+        headers: {
+            'Authorization': 'Bearer ' + state.token,
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: body
+    })
+    .then(function(response) {
+        return response.json().then(function(data) {
+            if (!response.ok) {
+                throw new Error(data.detail || 'Failed to update contact details');
+            }
+            return data;
+        });
+    })
+    .then(function() {
+        showToast('Contact details updated successfully.', 3000);
+        loadUserProfile();
+    })
+    .catch(function(error) {
+        if (profileError) {
+            profileError.textContent = error.message;
+        }
+        showToast(error.message, 3000);
+    });
 }
 
 /**

@@ -26,6 +26,11 @@ body {
     color: #fff;
 }
 
+.sub-nav {
+    background: #284b86;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
 #breadcrumb {
     padding: 8px 24px;
     background: #eef6fa;

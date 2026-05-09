@@ -13,6 +13,16 @@ from app.models.notice import ( FullNotice,
 from app.schemas.notice import NoticeCreate, NoticeUpdate
 
 """GET Endpoints functions"""
+def get_all_notices(db: Session):
+    """return all Notice records from Full_Notice view"""
+    query = text("""
+        SELECT *
+        FROM Full_Notice
+        ORDER BY NoticeID ASC
+    """)
+    result = db.execute(query)   # execute query
+    return result.fetchall()     # return all results as a list of tuples
+
 def get_notices_for_individual(db: Session, individual_id: int):
     """return all Notice records from Full_Notice view for a specific individual"""
     query = text("""

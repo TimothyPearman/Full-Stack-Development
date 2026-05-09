@@ -54,6 +54,15 @@ CREATE TABLE `User` (
     `Username` VARCHAR(100) NOT NULL UNIQUE,
     `Password` VARCHAR(100) NOT NULL,
     `Clearance` VARCHAR(100) NOT NULL,
+    `FullName` VARCHAR(100),
+    `DateOFBirth` DATETIME,
+    `CurrentAddress` VARCHAR(100),
+    `LicenseNumber` VARCHAR(100),
+    `licensePostcode` VARCHAR(100),
+    `NationalInsuranceNumber` VARCHAR(100),
+    `RegistrationNumber` VARCHAR(100),
+    `Email` VARCHAR(100),
+    `PhoneNumber` VARCHAR(100),
     CONSTRAINT `pk_users` PRIMARY KEY (`id`)
 );
 
@@ -477,46 +486,22 @@ FROM `Full_Notice`;
 # ---------------------------------------------------------------------- #
 
 DROP USER IF EXISTS `John_Smith`;
-DROP USER IF EXISTS `Emma_Lewis`;
-DROP USER IF EXISTS `Robert_Davis`;
-DROP USER IF EXISTS `Mary_Wilson`;
-DROP USER IF EXISTS `William_Brown`;
 
 CREATE USER `John_Smith` IDENTIFIED BY 'JPass';
 GRANT SELECT ON Traffic_Correction_Notices.`Citizen_Access`  TO `John_Smith`;		#`GRANT SELECT`only given `select` permission to prevent unauthorised editing of database records 
 Insert into `User`(ID,Username,Password,Clearance) 
 values (2,"John_Smith","JPass", "Civilian");
 
-CREATE USER `Emma_Lewis` IDENTIFIED BY 'EPass';
-GRANT SELECT ON Traffic_Correction_Notices.`Citizen_Access`  TO `Emma_Lewis`;
-
-CREATE USER `Robert_Davis` IDENTIFIED BY 'RPass';
-GRANT SELECT ON Traffic_Correction_Notices.`Citizen_Access` TO `Robert_Davis`;
-
-CREATE USER `Mary_Wilson` IDENTIFIED BY 'MPass';
-GRANT SELECT ON Traffic_Correction_Notices.`Citizen_Access` TO `Mary_Wilson`;
-
-CREATE USER `William_Brown` IDENTIFIED BY 'WPass';
-GRANT SELECT ON Traffic_Correction_Notices.`Citizen_Access` TO `William_Brown`;
-
 # ---------------------------------------------------------------------- #
 # Add Users "Officers"                                                   #
 # ---------------------------------------------------------------------- #
 
 DROP USER IF EXISTS `Timothy_Pearman`;
-DROP USER IF EXISTS `Amy_Owen`;
-DROP USER IF EXISTS `Quinn_Myth`;
 
 CREATE USER `Timothy_Pearman` IDENTIFIED BY 'TPass';
 GRANT INSERT ON Traffic_Correction_Notices.`Officer_Access` TO `Timothy_Pearman`;		#`GRANT INSERT`only given `INSERT` permission to insert new notice records, not edit or view existing
 Insert into `User`(ID,Username,Password,Clearance) 
 values (3,"Timothy_Pearman","TPass", "Officer");
-
-CREATE USER `Amy_Owen` IDENTIFIED BY 'APass';
-GRANT INSERT ON Traffic_Correction_Notices.`Officer_Access` TO `Amy_Owen`;
-
-CREATE USER `Quinn_Myth` IDENTIFIED BY 'QPass';
-GRANT INSERT ON Traffic_Correction_Notices.`Officer_Access` TO `Quinn_Myth`;
 
 
 # ----------------------------------------------------------------------Other---------------------------------------------------------------------- #

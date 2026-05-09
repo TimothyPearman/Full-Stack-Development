@@ -12,6 +12,15 @@
     <nav id="main-nav" class="nav-bar"> <!-- style="display:none;" -->
         <span class="brand">NYSP Traffic Correction Notice - Auth Portal</span>
         <a href="#info" class="nav-link" data-view="info">Information</a>
+        <a href="#register" class="nav-link" data-view="register">Register</a>
+        <a href="#login" class="nav-link" data-view="login">Login</a>
+
+        <!--<a href="#user-login" class="nav-link" data-view="user-login">Driver/Vehicle Owner</a>
+        <a href="#admin-login" class="nav-link" data-view="admin-login">Administrator</a>-->
+    </nav>
+    <!-- Login role-selection Navigation bar (shown below main nav) -->
+    <nav id="login-nav" class="nav-bar sub-nav" style="display:none;">
+        <span class="brand">Portals:</span>
         <a href="#user-login" class="nav-link" data-view="user-login">Driver/Vehicle Owner</a>
         <a href="#admin-login" class="nav-link" data-view="admin-login">Administrator</a>
     </nav>
@@ -49,22 +58,135 @@
             <h2>Information</h2>
             <p>This is the New York State Patrol system allowing different stakeholders to interact with the citation management system.</p>
             <p>for testing, the following credentials may be used:</p>
-            <p>Administrator</p>
-            <ul>
-                <li>Username: Admin</li>
-                <li>Password: APass</li>
-            </ul>
-            <p>Officer</p>
-            <ul>
-                <li>Username: Timothy_Pearman</li>
-                <li>Password: TPass</li>
-            </ul>
-            <p>Administrator</p>
+            <p>Driver/Vehicle Owner</p>
             <ul>
                 <li>Username: John_Smith</li>
                 <li>Password: JPass</li>
             </ul>
+            <p>Administrator</p>
+            <ul>
+                <li>Username: Timothy_Pearman</li>
+                <li>Password: TPass</li>
+            </ul>
         </section>
+        <section id="view-register" class="view">
+            <h2>Driver/Vehicle Owner Registration</h2>
+            <p>register a new account to access your citation information.</p>
+            <div style="max-width:360px;">
+                <!-- account information -->
+                <label>Username<br>
+                    <input
+                        type="text"
+                        id="register-username"
+                        style="width:100%;padding:8px;margin:6px 0 12px;"
+                    >
+                </label>
+                <label>Password<br>
+                    <input
+                        type="password"
+                        id="register-password"
+                        style="width:100%;padding:8px;margin:6px 0 12px;"
+                    >
+                </label>
+                <label>Confirm Password<br>
+                    <input
+                        type="password"
+                        id="register-password-confirm"
+                        style="width:100%;padding:8px;margin:6px 0 12px;"
+                    >
+                </label>
+
+                <!-- personal information --> <!-- full legal name, date of birth, current address -->
+                <h3>Personal Information</h3>
+                <label>Full Legal Name<br>
+                    <input
+                        type="text"
+                        id="register-full-name"
+                        style="width:100%;padding:8px;margin:6px 0 12px;"
+                    >
+                </label>
+                <label>Date of Birth<br>
+                    <input
+                        type="date"
+                        id="register-dob"
+                        style="width:100%;padding:8px;margin:6px 0 12px;"
+                    >
+                </label>
+                <label>Current Address<br>
+                    <input
+                        type="text"
+                        id="register-address"
+                        style="width:100%;padding:8px;margin:6px 0 12px;"
+                    >
+                </label>
+
+                <!-- drivers license details --> <!-- driving license number, postcode, national insurance number -->
+                <h3>Driver's License Details</h3>
+                <label>Driver's License Number<br>
+                    <input
+                        type="text"
+                        id="register-license-number"
+                        style="width:100%;padding:8px;margin:6px 0 12px;"
+                    >
+                </label>
+                <label>License Postcode<br>
+                    <input
+                        type="text"
+                        id="register-license-postcode"
+                        style="width:100%;padding:8px;margin:6px 0 12px;"
+                    >
+                </label>
+                <label>National Insurance Number<br>
+                    <input
+                        type="text"
+                        id="register-ni-number"
+                        style="width:100%;padding:8px;margin:6px 0 12px;"
+                    >
+                </label>
+
+                <!-- registration details --> <!-- vehicle registration number,  -->
+                <h3>Vehicle Registration Details</h3>
+                <label>Registration Number<br>
+                    <input
+                        type="text"
+                        id="register-vehicle-registration"
+                        style="width:100%;padding:8px;margin:6px 0 12px;"
+                    >
+                </label>
+
+                <!-- contact information --> <!-- email, phone number -->
+                <h3>Contact Information</h3>
+                <label>Email<br>
+                    <input
+                        type="email"
+                        id="register-email"
+                        style="width:100%;padding:8px;margin:6px 0 12px;"
+                    >
+                </label>
+                <label>Phone Number<br>
+                    <input
+                        type="tel"
+                        id="register-phone"
+                        style="width:100%;padding:8px;margin:6px 0 12px;"
+                    >
+                </label>
+
+                <button
+                    id="user-register-btn"
+                    style="background:#1F3864;color:#fff;border:none;padding:10px 24px;border-radius:4px;cursor:pointer;width:100%;"
+                >
+                    Register
+                </button>
+                <p id="register-error" class="error" style="margin-top:8px;"></p>
+            </div>
+        </section>
+        <section id="view-login" class="view">
+            <h2>Login</h2>
+            <p>Select a Login Portal to continue</p>
+        </section>
+
+        
+        <!-- login page views -->
         <section id="view-user-login" class="view">
             <h2>Driver/Vehicle Owner Login</h2>
             <p>Sign in to view your reading list and account details.</p>
@@ -139,7 +261,66 @@
         </section>
         <section id="view-user-profile" class="view">
             <h2>Driver/Vehicle Owner Profile</h2>
-            <p>view-user-profile</p>
+            <div id="profile-container" style="max-width:600px;">
+                <div id="profile-loading" style="text-align:center;">Loading profile...</div>
+                <div id="profile-content" style="display:none;">
+                    <div style="margin-bottom:20px;">
+                        <h3><u>Account Information:</u></h3>
+                        <p><strong>Username:</strong> <span id="profile-username"></span></p>
+                        <p><strong>Clearance:</strong> <span id="profile-clearance"></span></p>
+                    </div>
+                    <div style="margin-bottom:20px;">
+                        <h3><u>Personal Information:</u></h3>
+                        <p><strong>Full Name:</strong> <span id="profile-fullname">-</span></p>
+                        <p><strong>Date of Birth:</strong> <span id="profile-dob">-</span></p>
+                        <p><strong>Current Address:</strong> <span id="profile-address">-</span></p>
+                    </div>
+                    <div style="margin-bottom:20px;">
+                        <h3><u>Driver's License Details:</u></h3>
+                        <p><strong>License Number:</strong> <span id="profile-license-number">-</span></p>
+                        <p><strong>License Postcode:</strong> <span id="profile-license-postcode">-</span></p>
+                        <p><strong>National Insurance Number:</strong> <span id="profile-ni-number">-</span></p>
+                    </div>
+                    <div style="margin-bottom:20px;">
+                        <h3><u>Vehicle Registration:</u></h3>
+                        <p><strong>Registration Number:</strong> <span id="profile-registration-number">-</span></p>
+                    </div>
+                    <div style="margin-bottom:20px;">
+                        <h3><u>Contact Information:</u></h3>
+                        <p><strong>Email:</strong> <span id="profile-email">-</span></p>
+                        <p><strong>Phone Number:</strong> <span id="profile-phone">-</span></p>
+                    </div>
+                    <div style="margin-bottom:20px; border-top:1px solid #d9dee8; padding-top:20px;">
+                        <h3>Update Contact Details</h3>
+                        <p style="margin-bottom:12px;">Leave a field unchanged to keep the current value.</p>
+                        <div style="display:flex;flex-direction:column;gap:12px;max-width:360px;">
+                            <label>Email:
+                                <input
+                                    type="email"
+                                    id="profile-email-input"
+                                    placeholder="Enter a new email address"
+                                    style="width:100%;padding:8px;margin-top:4px;"
+                                >
+                            </label>
+                            <label>Phone Number:
+                                <input
+                                    type="tel"
+                                    id="profile-phone-input"
+                                    placeholder="Enter a new phone number"
+                                    style="width:100%;padding:8px;margin-top:4px;"
+                                >
+                            </label>
+                            <button
+                                id="profile-update-btn"
+                                style="background:#1F3864;color:#fff;border:none;padding:10px 24px;border-radius:4px;cursor:pointer;"
+                            >
+                                Save Changes
+                            </button>
+                        </div>
+                    </div>
+                    <p id="profile-error" class="error" style="margin-top:12px;"></p>
+                </div>
+            </div>
         </section>
         <section id="view-user-logout" class="view">
             <h2>Driver/Vehicle Owner logout</h2>
