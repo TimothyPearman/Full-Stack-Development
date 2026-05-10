@@ -1,6 +1,6 @@
 # app/schemas/notice.py
 from pydantic import BaseModel, Field
-from typing import Optional, Annotated
+from typing import Optional, Union
 from datetime import datetime
 from pydantic import StringConstraints
 
@@ -52,14 +52,14 @@ class NoticeBase(BaseModel):
     OfficersSignature: Optional[str] = None
     PersonnelNumber: Optional[int] = None
     # Notice fields
-    ActionSelection: Optional[str] = None
+    ActionSelection: Optional[Union[int, str]] = None
     DriversSignature: Optional[str] = None
 
     class Config:
         from_attributes = True
 
 # Used when creating or fully updating a notice via the API.
-class NoticeCreate(NoticeBase):
+class NoticeCreate(BaseModel):
     """schema for creating a new notice"""
     # Make these required for creation
     FirstName: str
@@ -99,7 +99,7 @@ class NoticeCreate(NoticeBase):
     OfficersSignature: str
     PersonnelNumber: int
     # Notice fields
-    ActionSelection: str
+    ActionSelection: int
     DriversSignature: str
 
 
@@ -111,13 +111,7 @@ class NoticeUpdate(BaseModel):
 # Used when returning a single notice from the API.
 class Notice(NoticeBase):
     """schema for a notice returned by the API"""
-    NoticeID: int   # add NoticeID as a required field
-
-    class Config:
-        from_attributes = True
 
 # alias for Full_Notice view response
 class FullNotice(NoticeBase):
     """schema for a full notice returned by the API"""
-    class Config:
-        from_attributes = True

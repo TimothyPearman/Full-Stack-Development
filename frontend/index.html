@@ -328,7 +328,39 @@
         <!-- Administrator interface views -->
         <section id="view-admin-dashboard" class="view">
             <h2>Administrator dashboard</h2>
-            <p>view-admin-dashboard</p>
+            <p>Overview of citation statistics. Refresh to re-query the server.</p>
+
+            <div id="admin-dashboard-controls" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:16px 0;">
+                <button
+                    id="admin-refresh-btn"
+                    style="background:#1F3864;color:#fff;border:none;padding:10px 24px;border-radius:4px;cursor:pointer;"
+                >
+                    &#8635; Refresh
+                </button>
+                <div id="admin-dashboard-status" aria-live="polite"></div>
+            </div>
+
+            <div id="admin-dashboard-stats" style="display:flex;flex-direction:column;gap:12px;max-width:760px;">
+                <div id="stat-total" class="admin-stat" style="width:100%;padding:12px;border:1px solid #e2e6ef;border-radius:6px;">
+                    <h3>Total citations</h3>
+                    <div id="stat-total-value">Unassigned</div>
+                </div>
+
+                <div id="stat-by-violation" class="admin-stat" style="width:100%;padding:12px;border:1px solid #e2e6ef;border-radius:6px;">
+                    <h3>Citations by violation</h3>
+                    <div id="stat-by-violation-list">Unassigned</div>
+                </div>
+
+                <div id="stat-by-district" class="admin-stat" style="width:100%;padding:12px;border:1px solid #e2e6ef;border-radius:6px;">
+                    <h3>Citations by district</h3>
+                    <div id="stat-by-district-list">Unassigned</div>
+                </div>
+
+                <div id="stat-by-detachment" class="admin-stat" style="width:100%;padding:12px;border:1px solid #e2e6ef;border-radius:6px;">
+                    <h3>Citations by detachment</h3>
+                    <div id="stat-by-detachment-list">Unassigned</div>
+                </div>
+            </div>
         </section>
         <section id="view-admin-management" class="view">
             <h2>Administrator management</h2>

@@ -192,7 +192,9 @@ function navigateTo(route, params = {}) {
         // admin routes
         case 'admin-dash':
             setBreadcrumb([{ label: 'Admin' }, { label: 'Dashboard' }]);
-            break;
+                // load admin stats when admin dashboard is shown
+                loadAdminStats();
+                break;
         case 'admin-management':
             setBreadcrumb([{ label: 'Admin' }, { label: 'Management' }]);
             break;
@@ -369,6 +371,14 @@ document.addEventListener('DOMContentLoaded', function() {
     if (refreshBtn) {
         refreshBtn.addEventListener('click', function() {
             loadUserNotices();
+        });
+    }
+
+    // admin refresh button
+    const adminRefreshBtn = document.getElementById('admin-refresh-btn');
+    if (adminRefreshBtn) {
+        adminRefreshBtn.addEventListener('click', function() {
+            loadAdminStats();
         });
     }
 
@@ -962,4 +972,109 @@ function loadUserNotices() {
 
         showToast(error.message, 3000);
     });
+}
+
+// ── Admin stats
+function renderAdminStats(stats) {
+    const totalEl = document.getElementById('stat-total-value');
+    const byViolationEl = document.getElementById('stat-by-violation-list');
+    const byDistrictEl = document.getElementById('stat-by-district-list');
+    const byDetachmentEl = document.getElementById('stat-by-detachment-list');
+    const statusEl = document.getElementById('admin-dashboard-status');
+
+    if (statusEl) statusEl.textContent = '';
+
+    if (totalEl) totalEl.textContent = stats.total != null ? String(stats.total) : 'Unassigned';
+
+    if (byViolationEl) {
+        if (!stats.by_violation || !stats.by_violation.length) {
+            byViolationEl.innerHTML = '<div>Unassigned</div>';
+        } else {
+            byViolationEl.innerHTML = '<table style="width:100%;border-collapse:collapse"><thead><tr>' +
+                '<th style="text-align:left;padding:6px;border-bottom:1px solid #e6e9f2">Violation</th>' +
+                '<th style="text-align:right;padding:6px;border-bottom:1px solid #e6e9f2">Count</th>' +
+                '</tr></thead><tbody>' + stats.by_violation.map(function(r) {
+                    const label = r && (r.violation || r.Violation) ? (r.violation || r.Violation) : 'Unassigned';
+                    const cnt = r && typeof r.count !== 'undefined' ? r.count : (r.cnt || 0);
+                    return '<tr><td style="padding:6px;border-bottom:1px solid #f4f6fb">' + label + '</td>' +
+                        '<td style="padding:6px;text-align:right;border-bottom:1px solid #f4f6fb">' + cnt + '</td></tr>';
+                }).join('') + '</tbody></table>';
+        }
+    }
+
+    if (byDistrictEl) {
+        if (!stats.by_district || !stats.by_district.length) {
+            byDistrictEl.innerHTML = '<div>Unassigned</div>';
+        } else {
+            byDistrictEl.innerHTML = '<table style="width:100%;border-collapse:collapse"><thead><tr>' +
+                '<th style="text-align:left;padding:6px;border-bottom:1px solid #e6e9f2">District</th>' +
+                '<th style="text-align:right;padding:6px;border-bottom:1px solid #e6e9f2">Count</th>' +
+                '</tr></thead><tbody>' + stats.by_district.map(function(r) {
+                    const label = r && (r.district || r.District) ? (r.district || r.District) : 'Unassigned';
+                    const cnt = r && typeof r.count !== 'undefined' ? r.count : (r.cnt || 0);
+                    return '<tr><td style="padding:6px;border-bottom:1px solid #f4f6fb">' + label + '</td>' +
+                        '<td style="padding:6px;text-align:right;border-bottom:1px solid #f4f6fb">' + cnt + '</td></tr>';
+                }).join('') + '</tbody></table>';
+        }
+    }
+
+    if (byDetachmentEl) {
+        if (!stats.by_detachment || !stats.by_detachment.length) {
+            byDetachmentEl.innerHTML = '<div>Unassigned</div>';
+        } else {
+            byDetachmentEl.innerHTML = '<table style="width:100%;border-collapse:collapse"><thead><tr>' +
+                '<th style="text-align:left;padding:6px;border-bottom:1px solid #e6e9f2">Detachment</th>' +
+                '<th style="text-align:right;padding:6px;border-bottom:1px solid #e6e9f2">Count</th>' +
+                '</tr></thead><tbody>' + stats.by_detachment.map(function(r) {
+                    const label = r && (r.detachment || r.Detachment) ? (r.detachment || r.Detachment) : 'Unassigned';
+                    const cnt = r && typeof r.count !== 'undefined' ? r.count : (r.cnt || 0);
+                    return '<tr><td style="padding:6px;border-bottom:1px solid #f4f6fb">' + label + '</td>' +
+                        '<td style="padding:6px;text-align:right;border-bottom:1px solid #f4f6fb">' + cnt + '</td></tr>';
+                }).join('') + '</tbody></table>';
+        }
+    }
+}
+
+function loadAdminStats() {
+    if (!state.token) {
+        showToast('Please log in as an administrator to view statistics.', 3000);
+        navigateTo('admin-login');
+        return;
+    }
+
+    const statusEl = document.getElementById('admin-dashboard-status');
+    if (statusEl) statusEl.textContent = 'Loading statistics...';
+
+    const headers = { 'Authorization': 'Bearer ' + state.token };
+
+    // fetch endpoints in parallel
+    const totalReq = fetch(API_URL + '/notices/counts/total', { headers });
+    const byViolationReq = fetch(API_URL + '/notices/counts/by-violation', { headers });
+    const byDistrictReq = fetch(API_URL + '/notices/counts/by-district', { headers });
+    const byDetachmentReq = fetch(API_URL + '/notices/counts/by-detachment', { headers });
+
+    Promise.all([totalReq, byViolationReq, byDistrictReq, byDetachmentReq])
+        .then(function(responses) {
+            // ensure all responses are ok and parse JSON
+            return Promise.all(responses.map(function(r) {
+                return r.json().then(function(data) {
+                    if (!r.ok) throw new Error(data.detail || 'Failed to fetch stats');
+                    return data;
+                });
+            }));
+        })
+        .then(function([totalData, violationData, districtData, detachmentData]) {
+                    const stats = {
+                        total: (totalData && typeof totalData.total !== 'undefined') ? totalData.total : null,
+                        by_violation: Array.isArray(violationData) ? violationData : (violationData && Array.isArray(violationData.results) ? violationData.results : null),
+                        by_district: Array.isArray(districtData) ? districtData : (districtData && Array.isArray(districtData.results) ? districtData.results : null),
+                        by_detachment: Array.isArray(detachmentData) ? detachmentData : (detachmentData && Array.isArray(detachmentData.results) ? detachmentData.results : null)
+                    };
+
+            renderAdminStats(stats);
+        })
+        .catch(function(error) {
+            if (statusEl) statusEl.textContent = error.message;
+            showToast(error.message, 4000);
+        });
 }

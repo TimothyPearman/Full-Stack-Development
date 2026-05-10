@@ -64,6 +64,42 @@ def get_notices_for_individual_by_officer(db: Session, individual_id: int, offic
     return result.fetchall()
 
 
+def get_notice_by_id(db: Session, notice_id: int):
+    """Return a single notice row from Full_Notice view by NoticeID as a dict, or None if not found."""
+    query = text("""
+        SELECT *
+        FROM Full_Notice
+        WHERE NoticeID = :notice_id
+        LIMIT 1
+    """)
+
+    result = db.execute(query, {"notice_id": notice_id})   # execute query with bind param
+    row = result.mappings().first()
+    if not row:
+        return None
+
+    row = dict(row)
+    # Ensure ActionSelection is returned as the action description string
+    action_val = row.get("ActionSelection")
+    if isinstance(action_val, int):
+        action_row = db.query(Action).filter(Action.id == action_val).first()
+        if action_row:
+            row["ActionSelection"] = action_row.description
+    elif isinstance(action_val, str):
+        # already a description string - leave as-is
+        pass
+    else:
+        try:
+            coerced = int(action_val)
+            action_row = db.query(Action).filter(Action.id == coerced).first()
+            if action_row:
+                row["ActionSelection"] = action_row.description
+        except Exception:
+            row["ActionSelection"] = None
+
+    return row
+
+
 def create_notice(db: Session, notice_in: NoticeCreate):
     """Create a new Notice record with all related tables in a transaction"""
     if notice_in.ResidenceState < 1 or notice_in.ResidenceState > 50:   # api default value is 0, table ids start at 1, added error checking so i dont have to read through giant error messages constantly when testing
@@ -71,6 +107,8 @@ def create_notice(db: Session, notice_in: NoticeCreate):
     if notice_in.IssuedState < 1 or notice_in.IssuedState > 50:
         raise ValueError("invalid IssuedState id: ids must be 1-50")
     if notice_in.RegisteredState < 1 or notice_in.RegisteredState > 50:
+
+    
         raise ValueError("invalid RegisteredState id: ids must be 1-50")
     
     try:
@@ -149,7 +187,7 @@ def create_notice(db: Session, notice_in: NoticeCreate):
             information_id=information.id,
             violation_id=violation_row.id,
             officer_id=officer.id,
-            action_selection=notice_in.ActionSelection,
+            action_id=notice_in.ActionSelection,
             drivers_signature=notice_in.DriversSignature,
         )
         db.add(notice)
@@ -163,7 +201,7 @@ def create_notice(db: Session, notice_in: NoticeCreate):
             "InformationID": notice.information_id,
             "ViolationID": notice.violation_id,
             "OfficerID": notice.officer_id,
-            "ActionSelection": notice.action_selection,
+            "ActionSelection": action_row.description if action_row else None,
             "DriversSignature": notice.drivers_signature,
         }
     
@@ -182,13 +220,16 @@ def update_notice(db: Session, notice_id: int, notice_in: NoticeUpdate):
     update_data = notice_in.model_dump(exclude_unset=True)              # convert model to dict and exclude unset fields to allow for partial updates
     
     if "ActionSelection" in update_data:                                
-        notice.action_selection = update_data["ActionSelection"]
+        notice.action_id = update_data["ActionSelection"]
     if "DriversSignature" in update_data:
         notice.drivers_signature = update_data["DriversSignature"]
 
     db.commit()                                                         # commit changes to database
     db.refresh(notice)                                                  # refresh notice to get updated data                                  
     
+    # resolve action description for response
+    action_row = db.query(Action).filter(Action.id == notice.action_id).first() if notice.action_id else None
+
     return {                                                            # return updated notice as a dict compatible with Notice schema
         "NoticeID": notice.id,
         "IndividualID": notice.individual_id,
@@ -196,7 +237,7 @@ def update_notice(db: Session, notice_id: int, notice_in: NoticeUpdate):
         "InformationID": notice.information_id,
         "ViolationID": notice.violation_id,
         "OfficerID": notice.officer_id,
-        "ActionSelection": notice.action_selection,
+        "ActionSelection": action_row.description if action_row else None,
         "DriversSignature": notice.drivers_signature,
     }
 
@@ -213,6 +254,9 @@ def update_violation(db: Session, notice_id: int, violation_in: str):
     db.commit()                                                         # commit changes to database
     db.refresh(notice)                                                  # refresh notice to get updated data                                  
     
+    # resolve action description
+    action_row = db.query(Action).filter(Action.id == notice.action_id).first() if notice.action_id else None
+
     return {                                                            # return updated notice as a dict compatible with Notice schema
         "NoticeID": notice.id,
         "IndividualID": notice.individual_id,
@@ -220,9 +264,55 @@ def update_violation(db: Session, notice_id: int, violation_in: str):
         "InformationID": notice.information_id,
         "ViolationID": notice.violation_id,
         "OfficerID": notice.officer_id,
-        "ActionSelection": notice.action_selection,
+        "ActionSelection": action_row.description if action_row else None,
         "DriversSignature": notice.drivers_signature,
     }
+
+
+def count_notices_total(db: Session):
+    """Return total number of notices from Full_Notice view"""
+    query = text("""
+        SELECT COUNT(*) AS total
+        FROM Full_Notice
+    """)
+    result = db.execute(query).scalar()
+    return {"total": int(result or 0)}
+
+
+def count_notices_by_violation(db: Session):
+    """Return counts grouped by Violation (description)"""
+    query = text("""
+        SELECT Violation, COUNT(*) AS cnt
+        FROM Full_Notice
+        GROUP BY Violation
+        ORDER BY cnt DESC
+    """)
+    rows = db.execute(query).mappings().all()
+    return [{"violation": r.get("Violation"), "count": int(r.get("cnt", 0))} for r in rows]
+
+
+def count_notices_by_district(db: Session):
+    """Return counts grouped by District"""
+    query = text("""
+        SELECT District, COUNT(*) AS cnt
+        FROM Full_Notice
+        GROUP BY District
+        ORDER BY District ASC
+    """)
+    rows = db.execute(query).mappings().all()
+    return [{"district": r.get("District"), "count": int(r.get("cnt", 0))} for r in rows]
+
+
+def count_notices_by_detachment(db: Session):
+    """Return counts grouped by Detachment"""
+    query = text("""
+        SELECT Detachment, COUNT(*) AS cnt
+        FROM Full_Notice
+        GROUP BY Detachment
+        ORDER BY Detachment ASC
+    """)
+    rows = db.execute(query).mappings().all()
+    return [{"detachment": r.get("Detachment"), "count": int(r.get("cnt", 0))} for r in rows]
 
 
 def delete_notice(db: Session, notice_id: int):
@@ -232,6 +322,9 @@ def delete_notice(db: Session, notice_id: int):
     if not notice:                                                      # ensure notice exists
         return None
 
+    # resolve action description for response
+    action_row = db.query(Action).filter(Action.id == notice.action_id).first() if notice.action_id else None
+
     deleted_notice = {
         "NoticeID": notice.id,
         "IndividualID": notice.individual_id,
@@ -239,7 +332,7 @@ def delete_notice(db: Session, notice_id: int):
         "InformationID": notice.information_id,
         "ViolationID": notice.violation_id,
         "OfficerID": notice.officer_id,
-        "ActionSelection": notice.action_selection,
+        "ActionSelection": action_row.description if action_row else None,
         "DriversSignature": notice.drivers_signature,
     }
 
@@ -264,6 +357,9 @@ def delete_violation(db: Session, notice_id: int):
     db.commit()                                                         # commit changes to database
     db.refresh(notice)                                                  # refresh notice to get updated data                                  
     
+    # resolve action description
+    action_row = db.query(Action).filter(Action.id == notice.action_id).first() if notice.action_id else None
+
     return {                                                            # return updated notice as a dict compatible with Notice schema
         "NoticeID": notice.id,
         "IndividualID": notice.individual_id,
@@ -271,6 +367,6 @@ def delete_violation(db: Session, notice_id: int):
         "InformationID": notice.information_id,
         "ViolationID": notice.violation_id,
         "OfficerID": notice.officer_id,
-        "ActionSelection": notice.action_selection,
+        "ActionSelection": action_row.description if action_row else None,
         "DriversSignature": notice.drivers_signature,
     }

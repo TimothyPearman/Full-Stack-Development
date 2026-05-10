@@ -72,7 +72,7 @@ class Action(Base):
     __tablename__ = "Action"
 
     id = Column("ActionID", Integer, primary_key=True, index=True)
-    description = Column("Description", Text)
+    description = Column("ActionSelection", Text)
 
 
 class Officer(Base):

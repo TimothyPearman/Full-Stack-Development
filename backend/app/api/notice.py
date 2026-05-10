@@ -76,6 +76,60 @@ async def get_notices_by_officer(officer_id: int, token: str = Depends(oauth2_sc
     notices = crud_notice.get_notices_for_individual_by_officer(db, user.id, officer_id)    # get all notices for the authenticated user using their user id as the individual id
     return notices
 
+
+@router.get("/{id}", response_model=Notice, summary="Get a notice by ID")
+async def get_notice_by_id(id: int, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    """Get a single notice by its NoticeID. Officers may view any notice; civilians may only view their own."""
+    user = check_valid_user(token, db)
+    clearance = get_user_clearance(user, db)
+
+    notice = crud_notice.get_notice_by_id(db, id)
+    if not notice:
+        raise HTTPException(status_code=404, detail="Notice not found")
+
+    if clearance == "Civilian":
+        registered = notice.get("RegisteredOwner")
+        if registered != user.Username:
+            raise HTTPException(status_code=403, detail="insufficient clearance to view this notice")
+
+    return notice
+
+
+@router.get("/counts/total", summary="Get total number of notices")
+async def get_notices_total(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    user = check_valid_user(token, db)
+    clearance = get_user_clearance(user, db)
+    if clearance != "Officer":
+        raise HTTPException(status_code=403, detail="insufficient clearance")
+    return crud_notice.count_notices_total(db)
+
+
+@router.get("/counts/by-violation", summary="Get notice counts by violation")
+async def get_notices_by_violation(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    user = check_valid_user(token, db)
+    clearance = get_user_clearance(user, db)
+    if clearance != "Officer":
+        raise HTTPException(status_code=403, detail="insufficient clearance")
+    return crud_notice.count_notices_by_violation(db)
+
+
+@router.get("/counts/by-district", summary="Get notice counts by district")
+async def get_notices_by_district(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    user = check_valid_user(token, db)
+    clearance = get_user_clearance(user, db)
+    if clearance != "Officer":
+        raise HTTPException(status_code=403, detail="insufficient clearance")
+    return crud_notice.count_notices_by_district(db)
+
+
+@router.get("/counts/by-detachment", summary="Get notice counts by detachment")
+async def get_notices_by_detachment(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    user = check_valid_user(token, db)
+    clearance = get_user_clearance(user, db)
+    if clearance != "Officer":
+        raise HTTPException(status_code=403, detail="insufficient clearance")
+    return crud_notice.count_notices_by_detachment(db)
+
 """
 POST Endpoints:
 """
