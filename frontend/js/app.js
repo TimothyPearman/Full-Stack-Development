@@ -98,7 +98,7 @@ function canAccess(route) {
     }
 
     // Officer-only routes
-    const officerRoutes = ['admin-dash', 'admin-management'];
+    const officerRoutes = ['admin-dash', 'admin-management', 'admin-management-create', 'admin-management-view', 'admin-management-update', 'admin-management-delete'];
     if (officerRoutes.includes(route) && !hasOfficerClearance()) {
         showToast('You do not have permission to access this page.', 3000);
         navigateTo('user-dash');
@@ -198,7 +198,21 @@ function navigateTo(route, params = {}) {
         case 'admin-management':
             setBreadcrumb([{ label: 'Admin' }, { label: 'Management' }]);
             break;
-            
+
+        // admin function routes
+        case 'admin-management-create':
+            setBreadcrumb([{ label: 'Admin' }, { label: 'Management' }, { label: 'Create Citation' }]);
+            break;
+        case 'admin-management-view':
+            setBreadcrumb([{ label: 'Admin' }, { label: 'Management' }, { label: 'View Citation' }]);
+            break;
+        case 'admin-management-update':
+            setBreadcrumb([{ label: 'Admin' }, { label: 'Management' }, { label: 'Update Citation' }]);
+            break;
+        case 'admin-management-delete':
+            setBreadcrumb([{ label: 'Admin' }, { label: 'Management' }, { label: 'Delete Citation' }]);
+            break;
+
         default:
             setBreadcrumb([{ label: 'Home' }]);
     }
@@ -221,8 +235,12 @@ function navigateTo(route, params = {}) {
         return;
     }
 
-    if (route === 'admin-dash' || route === 'admin-management') {
+    if (route === 'admin-dash') {
         setVisibleNav('admin-nav');
+    }
+
+    if (route === 'admin-management' || route === 'admin-management-create' || route === 'admin-management-view' || route === 'admin-management-update' || route === 'admin-management-delete') {
+        setVisibleNav(['admin-nav', 'admin-functions-nav']);
     }
 }
 
@@ -247,6 +265,12 @@ const ROUTE_TO_VIEW = {
     'admin-dash': 'view-admin-dashboard',
     'admin-management': 'view-admin-management',
     'admin-logout': 'view-admin-logout',
+
+    // admin function views
+    'admin-management-create': 'view-admin-management-create',
+    'admin-management-view': 'view-admin-management-view',
+    'admin-management-update': 'view-admin-management-update',
+    'admin-management-delete': 'view-admin-management-delete',
 
 	'logout': 'view-logout'
 };
@@ -287,7 +311,7 @@ function setVisibleNav(navIds) {
     const visibleNavs = Array.isArray(navIds) ? navIds : [navIds];
 
     // Show selected nav bars, hide the others
-    ['main-nav', 'login-nav', 'user-nav', 'admin-nav'].forEach(id => {
+    ['main-nav', 'login-nav', 'user-nav', 'admin-nav', 'admin-functions-nav'].forEach(id => {
         const nav = document.getElementById(id);
         if (nav) {
             nav.style.display = visibleNavs.includes(id) ? 'flex' : 'none';
@@ -379,6 +403,34 @@ document.addEventListener('DOMContentLoaded', function() {
     if (adminRefreshBtn) {
         adminRefreshBtn.addEventListener('click', function() {
             loadAdminStats();
+        });
+    }
+
+    const adminViewCitationRecordBtn = document.getElementById('admin-view-citation-record-btn');
+    if (adminViewCitationRecordBtn) {
+        adminViewCitationRecordBtn.addEventListener('click', function() {
+            loadAdminCitationById();
+        });
+    }
+
+    const adminDeleteCitationRecordBtn = document.getElementById('admin-delete-citation-record-btn');
+    if (adminDeleteCitationRecordBtn) {
+        adminDeleteCitationRecordBtn.addEventListener('click', function() {
+            loadAdminCitationForDelete();
+        });
+    }
+
+    const adminCreateCitationBtn = document.getElementById('admin-create-citation-btn');
+    if (adminCreateCitationBtn) {
+        adminCreateCitationBtn.addEventListener('click', function() {
+            handleSubmitCreate();
+        });
+    }
+
+    const adminUpdateCitationBtn = document.getElementById('admin-update-citation-btn');
+    if (adminUpdateCitationBtn) {
+        adminUpdateCitationBtn.addEventListener('click', function() {
+            handleSubmitUpdate();
         });
     }
 
@@ -884,6 +936,20 @@ function buildNoticeArticleHtml(notice, displayId) {
     </article>`;
 }
 
+function buildStaticNoticeArticleHtml(notice, displayId) {
+    return `<article class="notice-card">
+        <div class="notice-toggle" style="cursor:default;">
+            <span class="notice-toggle-title">Citation ID: ${displayId}</span>
+            <span class="notice-toggle-action">
+                <span>Record details</span>
+            </span>
+        </div>
+        <div class="notice-details">
+            ${buildNoticeFieldsHtml(notice)}
+        </div>
+    </article>`;
+}
+
 function renderUserNotices() {
     const noticesContainer = document.getElementById('user-dashboard-notices');
     const statusElement = document.getElementById('user-dashboard-status');
@@ -970,6 +1036,167 @@ function loadUserNotices() {
             noticesContainer.innerHTML = '<p>' + error.message + '</p>';
         }
 
+        showToast(error.message, 3000);
+    });
+}
+
+function loadAdminCitationById() {
+    if (!state.token) {
+        showToast('Please log in as an administrator to view citations.', 3000);
+        navigateTo('admin-login');
+        return;
+    }
+
+    const citationIdInput = document.getElementById('admin-view-citation-id');
+    const statusElement = document.getElementById('admin-view-citation-status');
+    const resultElement = document.getElementById('admin-view-citation-result');
+    const citationId = citationIdInput ? Number.parseInt(citationIdInput.value, 10) : NaN;
+
+    if (statusElement) statusElement.textContent = '';
+
+    if (Number.isNaN(citationId)) {
+        const message = 'Enter a valid citation ID.';
+        if (statusElement) statusElement.textContent = message;
+        showToast(message, 3000);
+        return;
+    }
+
+    if (resultElement) {
+        resultElement.innerHTML = '<p>Loading citation...</p>';
+    }
+
+    fetch(API_URL + '/notices/' + citationId, {
+        method: 'GET',
+        headers: {
+            'Authorization': 'Bearer ' + state.token
+        }
+    })
+    .then(function(response) {
+        return response.json().then(function(data) {
+            if (!response.ok) {
+                throw new Error(data.detail || 'Failed to load citation');
+            }
+            return data;
+        });
+    })
+    .then(function(data) {
+        if (statusElement) {
+            statusElement.textContent = 'Citation loaded.';
+        }
+        if (resultElement) {
+            const displayId = data.NoticeID != null ? data.NoticeID : citationId;
+            resultElement.innerHTML = buildStaticNoticeArticleHtml(data, displayId);
+        }
+    })
+    .catch(function(error) {
+        if (statusElement) {
+            statusElement.textContent = error.message;
+        }
+        if (resultElement) {
+            resultElement.innerHTML = '<p>' + error.message + '</p>';
+        }
+        showToast(error.message, 3000);
+    });
+}
+
+function loadAdminCitationForDelete() {
+    if (!state.token) {
+        showToast('Please log in as an administrator to delete citations.', 3000);
+        navigateTo('admin-login');
+        return;
+    }
+
+    const citationIdInput = document.getElementById('admin-delete-citation-id');
+    const statusElement = document.getElementById('admin-delete-citation-status');
+    const resultElement = document.getElementById('admin-delete-citation-result');
+    const citationId = citationIdInput ? Number.parseInt(citationIdInput.value, 10) : NaN;
+
+    if (statusElement) statusElement.textContent = '';
+
+    if (Number.isNaN(citationId)) {
+        const message = 'Enter a valid citation ID.';
+        if (statusElement) statusElement.textContent = message;
+        showToast(message, 3000);
+        return;
+    }
+
+    if (resultElement) {
+        resultElement.innerHTML = '<p>Loading citation...</p>';
+    }
+
+    fetch(API_URL + '/notices/' + citationId, {
+        method: 'GET',
+        headers: {
+            'Authorization': 'Bearer ' + state.token
+        }
+    })
+    .then(function(response) {
+        return response.json().then(function(data) {
+            if (!response.ok) {
+                throw new Error(data.detail || 'Failed to load citation');
+            }
+            return data;
+        });
+    })
+    .then(function(data) {
+        if (statusElement) {
+            statusElement.textContent = 'Citation loaded. Click the delete button below to confirm deletion.';
+        }
+        if (resultElement) {
+            const displayId = data.NoticeID != null ? data.NoticeID : citationId;
+            const deleteBtn = `<button type="button" id="confirm-delete-btn" style="margin-top:12px;background:#c41e3a;color:#fff;border:none;padding:10px 24px;border-radius:4px;cursor:pointer;">Confirm Delete Citation</button>`;
+            resultElement.innerHTML = buildStaticNoticeArticleHtml(data, displayId) + deleteBtn;
+            document.getElementById('confirm-delete-btn').addEventListener('click', function() {
+                handleConfirmDelete(citationId);
+            });
+        }
+    })
+    .catch(function(error) {
+        if (statusElement) {
+            statusElement.textContent = error.message;
+        }
+        if (resultElement) {
+            resultElement.innerHTML = '<p>' + error.message + '</p>';
+        }
+        showToast(error.message, 3000);
+    });
+}
+
+function handleConfirmDelete(citationId) {
+    if (!state.token) {
+        showToast('Please log in as an administrator to delete citations.', 3000);
+        return;
+    }
+
+    const statusElement = document.getElementById('admin-delete-citation-status');
+    const resultElement = document.getElementById('admin-delete-citation-result');
+
+    if (statusElement) statusElement.textContent = 'Deleting citation...';
+    if (resultElement) resultElement.innerHTML = '<p>Deleting citation...</p>';
+
+    fetch(API_URL + '/notices/' + citationId, {
+        method: 'DELETE',
+        headers: {
+            'Authorization': 'Bearer ' + state.token
+        }
+    })
+    .then(function(response) {
+        return response.json().then(function(data) {
+            if (!response.ok) {
+                throw new Error(data.detail || 'Failed to delete citation');
+            }
+            return data;
+        });
+    })
+    .then(function(data) {
+        const msg = 'Citation deleted successfully.';
+        if (statusElement) statusElement.textContent = msg;
+        if (resultElement) resultElement.innerHTML = '<p style="color:green;font-weight:bold;">' + msg + '</p>';
+        showToast(msg, 3000);
+    })
+    .catch(function(error) {
+        if (statusElement) statusElement.textContent = error.message;
+        if (resultElement) resultElement.innerHTML = '<p>' + error.message + '</p>';
         showToast(error.message, 3000);
     });
 }
@@ -1077,4 +1304,236 @@ function loadAdminStats() {
             if (statusEl) statusEl.textContent = error.message;
             showToast(error.message, 4000);
         });
+}
+
+// Collect create payload from create inputs. All fields required for creation.
+function collectCreatePayload() {
+    const mapping = {
+        'create-first-name': 'FirstName',
+        'create-last-name': 'LastName',
+        'create-individual-address': 'IndividualAddress',
+        'create-city': 'City',
+        'create-residence-state': 'ResidenceState',
+        'create-zip-code': 'ZipCode',
+        'create-drivers-license': 'DriversLicense',
+        'create-issued-state': 'IssuedState',
+        'create-birth-date': 'BirthDate',
+        'create-height': 'Height',
+        'create-weight': 'Weight',
+        'create-eyes': 'Eyes',
+        'create-vehicle-license': 'VehicleLicense',
+        'create-registered-state': 'RegisteredState',
+        'create-colour': 'Colour',
+        'create-year': 'Year',
+        'create-make': 'Make',
+        'create-type': 'Type',
+        'create-vin': 'VIN',
+        'create-registered-owner': 'RegisteredOwner',
+        'create-vehicle-address': 'VehicleAddress',
+        'create-violation-date': 'ViolationDate',
+        'create-district': 'District',
+        'create-detachment': 'Detachment',
+        'create-miles': 'Miles',
+        'create-direction': 'Direction',
+        'create-town': 'Town',
+        'create-road': 'Road',
+        'create-violation': 'Violation',
+        'create-officers-signature': 'OfficersSignature',
+        'create-personnel-number': 'PersonnelNumber',
+        'create-action-selection': 'ActionSelection',
+        'create-drivers-signature': 'DriversSignature'
+    };
+    const payload = {};
+    Object.entries(mapping).forEach(function([inputId, fieldName]) {
+        const el = document.getElementById(inputId);
+        if (!el) return;
+        const val = el.value;
+        if (val === null || typeof val === 'undefined' || val === '') return;
+        if (el.type === 'number') {
+            const parsed = Number.parseInt(val, 10);
+            if (!Number.isNaN(parsed)) payload[fieldName] = parsed;
+            return;
+        }
+        if (el.type === 'datetime-local') {
+            const d = new Date(val);
+            if (!Number.isNaN(d.getTime())) {
+                payload[fieldName] = d.toISOString();
+            }
+            return;
+        }
+        payload[fieldName] = val;
+    });
+    return payload;
+}
+
+function handleSubmitCreate() {
+    if (!state.token) {
+        showToast('Please log in as an administrator to create citations.', 3000);
+        return;
+    }
+    const statusEl = document.getElementById('admin-create-status');
+    if (statusEl) statusEl.textContent = '';
+    const payload = collectCreatePayload();
+    const requiredFields = ['FirstName','LastName','IndividualAddress','City','ResidenceState','ZipCode','DriversLicense','IssuedState','BirthDate','Height','Weight','Eyes','VehicleLicense','RegisteredState','Colour','Year','Make','Type','VIN','RegisteredOwner','VehicleAddress','ViolationDate','District','Detachment','Miles','Direction','Town','Road','Violation','OfficersSignature','PersonnelNumber','ActionSelection','DriversSignature'];
+    const missing = requiredFields.filter(f => typeof payload[f] === 'undefined');
+    if (missing.length > 0) {
+        const msg = 'Required fields missing: ' + missing.join(', ');
+        if (statusEl) statusEl.textContent = msg;
+        showToast(msg, 3000);
+        return;
+    }
+    fetch(API_URL + '/notices/create', {
+        method: 'POST',
+        headers: {
+            'Authorization': 'Bearer ' + state.token,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(function(response) {
+        return response.json().then(function(data) {
+            if (!response.ok) {
+                throw new Error(data.detail || 'Failed to create citation');
+            }
+            return data;
+        });
+    })
+    .then(function(data) {
+        const msg = 'Citation created successfully.';
+        if (statusEl) statusEl.textContent = msg;
+        showToast(msg, 3000);
+    })
+    .catch(function(error) {
+        if (statusEl) statusEl.textContent = error.message;
+        showToast(error.message, 3000);
+    });
+}
+
+// Collect update payload from update inputs. Only include fields with values.
+function collectUpdatePayload() {
+    const mapping = {
+        'update-first-name': 'FirstName',
+        'update-last-name': 'LastName',
+        'update-individual-address': 'IndividualAddress',
+        'update-city': 'City',
+        'update-residence-state': 'ResidenceState',
+        'update-zip-code': 'ZipCode',
+        'update-drivers-license': 'DriversLicense',
+        'update-issued-state': 'IssuedState',
+        'update-birth-date': 'BirthDate',
+        'update-height': 'Height',
+        'update-weight': 'Weight',
+        'update-eyes': 'Eyes',
+
+        'update-vehicle-license': 'VehicleLicense',
+        'update-registered-state': 'RegisteredState',
+        'update-colour': 'Colour',
+        'update-year': 'Year',
+        'update-make': 'Make',
+        'update-type': 'Type',
+        'update-vin': 'VIN',
+        'update-registered-owner': 'RegisteredOwner',
+        'update-vehicle-address': 'VehicleAddress',
+
+        'update-violation-date': 'ViolationDate',
+        'update-district': 'District',
+        'update-detachment': 'Detachment',
+        'update-miles': 'Miles',
+        'update-direction': 'Direction',
+        'update-town': 'Town',
+        'update-road': 'Road',
+        'update-violation': 'Violation',
+
+        'update-officers-signature': 'OfficersSignature',
+        'update-personnel-number': 'PersonnelNumber',
+        'update-action-selection': 'ActionSelection',
+        'update-drivers-signature': 'DriversSignature'
+    };
+
+    const payload = {};
+    Object.entries(mapping).forEach(function([inputId, fieldName]) {
+        const el = document.getElementById(inputId);
+        if (!el) return;
+        const val = el.value;
+        if (val === null || typeof val === 'undefined' || val === '') return;
+
+        // number fields
+        if (el.type === 'number') {
+            const parsed = Number.parseInt(val, 10);
+            if (!Number.isNaN(parsed)) payload[fieldName] = parsed;
+            return;
+        }
+
+        // datetime-local -> ISO
+        if (el.type === 'datetime-local') {
+            const d = new Date(val);
+            if (!Number.isNaN(d.getTime())) {
+                payload[fieldName] = d.toISOString();
+            }
+            return;
+        }
+
+        payload[fieldName] = val;
+    });
+
+    return payload;
+}
+
+function handleSubmitUpdate() {
+    // prefer explicit update id input if present, otherwise fall back to admin-view id
+    const idInputs = ['update-citation-id', 'admin-view-citation-id', 'view-citation-id'];
+    let citationId = null;
+    for (const id of idInputs) {
+        const el = document.getElementById(id);
+        if (el && el.value) {
+            citationId = Number.parseInt(el.value, 10);
+            break;
+        }
+    }
+
+    const statusEl = document.getElementById('admin-update-status') || document.getElementById('admin-view-citation-status');
+    if (statusEl) statusEl.textContent = '';
+
+    if (!citationId || Number.isNaN(citationId)) {
+        const msg = 'Enter a valid citation ID to update.';
+        if (statusEl) statusEl.textContent = msg;
+        showToast(msg, 3000);
+        return;
+    }
+
+    const payload = collectUpdatePayload();
+    if (!Object.keys(payload).length) {
+        const msg = 'Provide at least one field to update.';
+        if (statusEl) statusEl.textContent = msg;
+        showToast(msg, 3000);
+        return;
+    }
+
+    fetch(API_URL + '/notices/' + citationId, {
+        method: 'PUT',
+        headers: {
+            'Authorization': 'Bearer ' + state.token,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(function(response) {
+        return response.json().then(function(data) {
+            if (!response.ok) {
+                throw new Error(data.detail || 'Failed to update citation');
+            }
+            return data;
+        });
+    })
+    .then(function(data) {
+        const msg = 'Citation updated successfully.';
+        if (statusEl) statusEl.textContent = msg;
+        showToast(msg, 3000);
+        const resultEl = document.getElementById('admin-update-result') || document.getElementById('admin-view-citation-result');
+        if (resultEl) resultEl.innerHTML = buildStaticNoticeArticleHtml(data, data.NoticeID || citationId);
+    })
+    .catch(function(error) {
+        if (statusEl) statusEl.textContent = error.message;
+        showToast(error.message, 3000);
+    });
 }

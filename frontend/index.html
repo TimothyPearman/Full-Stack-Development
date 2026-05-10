@@ -40,6 +40,14 @@
         <!-- <a href="#admin-logout" class="nav-link" data-view="admin-logout">Logout</a> -->
         <a id="admin-logout-btn" class="nav-link">Logout</a>
     </nav>
+    <!-- Admin function-selection Navigation bar (shown below main nav) -->
+    <nav id="admin-functions-nav" class="nav-bar sub-nav" style="display:none;">
+        <span class="brand">Admin Functions:</span>
+        <a href="#admin-management-create" class="nav-link" data-view="admin-management-create">Create Citation</a>
+        <a href="#admin-management-view" class="nav-link" data-view="admin-management-view">View Citation</a>
+        <a href="#admin-management-update" class="nav-link" data-view="admin-management-update">Update Citation</a>
+        <a href="#admin-management-delete" class="nav-link" data-view="admin-management-delete">Delete Citation</a>
+    </nav>
 
     <!-- Breadcrumb -->
     <div id="breadcrumb"></div>
@@ -321,8 +329,10 @@
             </div>
         </section>
         <section id="view-user-logout" class="view">
+            <!--
             <h2>Driver/Vehicle Owner logout</h2>
             <p>view-user-logout</p>
+            -->
         </section>
 
         <!-- Administrator interface views -->
@@ -367,8 +377,208 @@
             <p>view-admin-management</p>
         </section>
         <section id="view-admin-logout" class="view">
+            <!--
             <h2>Administrator logout</h2>
             <p>view-admin-logout</p>
+            -->
+        </section>
+
+        <!-- Administrator function views -->
+        <section id="view-admin-management-create" class="view">
+            <h2>Create a citation</h2>
+            <div style="max-width:760px;display:grid;grid-template-columns:220px 1fr;gap:8px;align-items:center;">
+                <h3 style="grid-column:1/3;margin-top:0;">Individual</h3>
+                <label style="grid-column:1;text-align:right;padding-right:8px;">First Name</label>
+                <input id="create-first-name" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Last Name</label>
+                <input id="create-last-name" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Individual Address</label>
+                <input id="create-individual-address" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">City</label>
+                <input id="create-city" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Residence State ID</label>
+                <input id="create-residence-state" type="number" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Zip Code</label>
+                <input id="create-zip-code" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Driver's License</label>
+                <input id="create-drivers-license" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Issued State ID</label>
+                <input id="create-issued-state" type="number" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Birth Date</label>
+                <input id="create-birth-date" type="datetime-local" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Height</label>
+                <input id="create-height" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Weight</label>
+                <input id="create-weight" type="number" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Eyes</label>
+                <input id="create-eyes" style="grid-column:2;padding:8px;">
+                <h3 style="grid-column:1/3;margin-top:12px;">Vehicle</h3>
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Vehicle License</label>
+                <input id="create-vehicle-license" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Registered State ID</label>
+                <input id="create-registered-state" type="number" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Colour</label>
+                <input id="create-colour" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Year</label>
+                <input id="create-year" type="number" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Make</label>
+                <input id="create-make" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Type</label>
+                <input id="create-type" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">VIN</label>
+                <input id="create-vin" type="number" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Registered Owner</label>
+                <input id="create-registered-owner" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Vehicle Address</label>
+                <input id="create-vehicle-address" style="grid-column:2;padding:8px;">
+                <h3 style="grid-column:1/3;margin-top:12px;">Information</h3>
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Violation Date</label>
+                <input id="create-violation-date" type="datetime-local" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">District</label>
+                <input id="create-district" type="number" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Detachment</label>
+                <input id="create-detachment" type="number" style="grid-column:2;padding:8px;">
+                <h3 style="grid-column:1/3;margin-top:12px;">Location</h3>
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Miles</label>
+                <input id="create-miles" type="number" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Direction</label>
+                <input id="create-direction" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Town</label>
+                <input id="create-town" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Road</label>
+                <input id="create-road" style="grid-column:2;padding:8px;">
+                <h3 style="grid-column:1/3;margin-top:12px;">Violation</h3>
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Violation</label>
+                <input id="create-violation" style="grid-column:2;padding:8px;">
+                <h3 style="grid-column:1/3;margin-top:12px;">Officer</h3>
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Officer's Signature</label>
+                <input id="create-officers-signature" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Personnel Number</label>
+                <input id="create-personnel-number" type="number" style="grid-column:2;padding:8px;">
+                <h3 style="grid-column:1/3;margin-top:12px;">Notice</h3>
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Action Selection ID</label>
+                <input id="create-action-selection" type="number" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Driver's Signature</label>
+                <input id="create-drivers-signature" style="grid-column:2;padding:8px;">
+                <div style="grid-column:1;">&nbsp;</div>
+                <div style="grid-column:2;display:flex;gap:12px;align-items:center;">
+                    <button id="admin-create-citation-btn" type="button" style="margin-top:12px;background:#1F3864;color:#fff;border:none;padding:10px 24px;border-radius:4px;cursor:pointer;">Create Citation</button>
+                    <div id="admin-create-status" aria-live="polite" style="margin-left:8px;"></div>
+                </div>
+            </div>
+        </section>
+        <section id="view-admin-management-view" class="view">
+            <h2>View citations</h2>
+            <p>Enter a citation ID to load the record below.</p>
+            <div style="max-width:520px;display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin-bottom:16px;">
+                <label style="flex:1 1 200px;">Citation ID
+                    <input id="admin-view-citation-id" type="number" style="width:100%;padding:8px;margin-top:4px;">
+                </label>
+                <button id="admin-view-citation-record-btn" type="button" style="background:#1F3864;color:#fff;border:none;padding:10px 24px;border-radius:4px;cursor:pointer;">
+                    View Citation
+                </button>
+            </div>
+            <div id="admin-view-citation-status" aria-live="polite" style="margin:16px 0;"></div>
+            <div id="admin-view-citation-result"></div>
+        </section>
+        <section id="view-admin-management-update" class="view">
+            <h2>Update a citation</h2>
+            <div style="max-width:760px;display:grid;grid-template-columns:220px 1fr;gap:8px;align-items:center;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Citation ID</label>
+                <input id="update-citation-id" type="number" placeholder="Enter citation ID" style="grid-column:2;padding:8px;">
+                <h3 style="grid-column:1/3;margin-top:12px;">Individual</h3>
+                <label style="grid-column:1;text-align:right;padding-right:8px;">First Name</label>
+                <input id="update-first-name" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Last Name</label>
+                <input id="update-last-name" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Individual Address</label>
+                <input id="update-individual-address" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">City</label>
+                <input id="update-city" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Residence State ID</label>
+                <input id="update-residence-state" type="number" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Zip Code</label>
+                <input id="update-zip-code" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Driver's License</label>
+                <input id="update-drivers-license" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Issued State ID</label>
+                <input id="update-issued-state" type="number" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Birth Date</label>
+                <input id="update-birth-date" type="datetime-local" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Height</label>
+                <input id="update-height" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Weight</label>
+                <input id="update-weight" type="number" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Eyes</label>
+                <input id="update-eyes" style="grid-column:2;padding:8px;">
+                <h3 style="grid-column:1/3;margin-top:12px;">Vehicle</h3>
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Vehicle License</label>
+                <input id="update-vehicle-license" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Registered State ID</label>
+                <input id="update-registered-state" type="number" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Colour</label>
+                <input id="update-colour" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Year</label>
+                <input id="update-year" type="number" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Make</label>
+                <input id="update-make" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Type</label>
+                <input id="update-type" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">VIN</label>
+                <input id="update-vin" type="number" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Registered Owner</label>
+                <input id="update-registered-owner" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Vehicle Address</label>
+                <input id="update-vehicle-address" style="grid-column:2;padding:8px;">
+                <h3 style="grid-column:1/3;margin-top:12px;">Information</h3>
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Violation Date</label>
+                <input id="update-violation-date" type="datetime-local" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">District</label>
+                <input id="update-district" type="number" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Detachment</label>
+                <input id="update-detachment" type="number" style="grid-column:2;padding:8px;">
+                <h3 style="grid-column:1/3;margin-top:12px;">Location</h3>
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Miles</label>
+                <input id="update-miles" type="number" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Direction</label>
+                <input id="update-direction" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Town</label>
+                <input id="update-town" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Road</label>
+                <input id="update-road" style="grid-column:2;padding:8px;">
+                <h3 style="grid-column:1/3;margin-top:12px;">Violation</h3>
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Violation</label>
+                <input id="update-violation" style="grid-column:2;padding:8px;">
+                <h3 style="grid-column:1/3;margin-top:12px;">Officer</h3>
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Officer's Signature</label>
+                <input id="update-officers-signature" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Personnel Number</label>
+                <input id="update-personnel-number" type="number" style="grid-column:2;padding:8px;">
+                <h3 style="grid-column:1/3;margin-top:12px;">Notice</h3>
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Action Selection ID</label>
+                <input id="update-action-selection" type="number" style="grid-column:2;padding:8px;">
+                <label style="grid-column:1;text-align:right;padding-right:8px;">Driver's Signature</label>
+                <input id="update-drivers-signature" style="grid-column:2;padding:8px;">
+                <div style="grid-column:1;">&nbsp;</div>
+                <div style="grid-column:2;display:flex;gap:12px;align-items:center;">
+                    <button id="admin-update-citation-btn" type="button" style="margin-top:12px;background:#1F3864;color:#fff;border:none;padding:10px 24px;border-radius:4px;cursor:pointer;">Save Citation Updates</button>
+                    <div id="admin-update-status" aria-live="polite" style="margin-left:8px;"></div>
+                </div>
+            </div>
+        </section>
+        <section id="view-admin-management-delete" class="view">
+            <h2>Delete a citation</h2>
+            <p>Enter a citation ID to load and delete the record.</p>
+            <div style="max-width:520px;display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin-bottom:16px;">
+                <label style="flex:1 1 200px;">Citation ID
+                    <input id="admin-delete-citation-id" type="number" style="width:100%;padding:8px;margin-top:4px;">
+                </label>
+                <button id="admin-delete-citation-record-btn" type="button" style="background:#1F3864;color:#fff;border:none;padding:10px 24px;border-radius:4px;cursor:pointer;">
+                    Load Citation
+                </button>
+            </div>
+            <div id="admin-delete-citation-status" aria-live="polite" style="margin:16px 0;"></div>
+            <div id="admin-delete-citation-result"></div>
         </section>
 
         <!-- shared logout button -->

@@ -105,6 +105,38 @@ class NoticeCreate(BaseModel):
 
 class NoticeUpdate(BaseModel):
     """schema for updating an existing notice"""
+    # Allow updating any field; all are optional for partial updates
+    FirstName: Optional[str] = None
+    LastName: Optional[str] = None
+    IndividualAddress: Optional[str] = None
+    City: Optional[str] = None
+    ResidenceState: Optional[int] = None
+    ZipCode: Optional[str] = None
+    DriversLicense: Optional[str] = None
+    IssuedState: Optional[int] = None
+    BirthDate: Optional[datetime] = None
+    Height: Optional[str] = None
+    Weight: Optional[int] = None
+    Eyes: Optional[str] = None
+    VehicleLicense: Optional[str] = None
+    RegisteredState: Optional[int] = None
+    Colour: Optional[str] = None
+    Year: Optional[int] = None
+    Make: Optional[str] = None
+    Type: Optional[str] = None
+    VIN: Optional[int] = None
+    RegisteredOwner: Optional[str] = None
+    VehicleAddress: Optional[str] = None
+    ViolationDate: Optional[datetime] = None
+    District: Optional[int] = None
+    Detachment: Optional[int] = None
+    Miles: Optional[int] = None
+    Direction: Optional[str] = None
+    Town: Optional[str] = None
+    Road: Optional[str] = None
+    Violation: Optional[str] = None
+    OfficersSignature: Optional[str] = None
+    PersonnelNumber: Optional[int] = None
     ActionSelection: Optional[int] = None
     DriversSignature: Optional[str] = None
 

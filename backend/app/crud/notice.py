@@ -216,29 +216,113 @@ def update_notice(db: Session, notice_id: int, notice_in: NoticeUpdate):
 
     if not notice:                                                      # ensure notice exists
         return None
+    update_data = notice_in.model_dump(exclude_unset=True)
 
-    update_data = notice_in.model_dump(exclude_unset=True)              # convert model to dict and exclude unset fields to allow for partial updates
-    
-    if "ActionSelection" in update_data:                                
-        notice.action_id = update_data["ActionSelection"]
-    if "DriversSignature" in update_data:
-        notice.drivers_signature = update_data["DriversSignature"]
+    # preload related objects
+    individual = db.query(Individual).filter(Individual.id == notice.individual_id).first() if notice.individual_id else None
+    vehicle = db.query(Vehicle).filter(Vehicle.id == notice.vehicle_id).first() if notice.vehicle_id else None
+    information = db.query(Information).filter(Information.id == notice.information_id).first() if notice.information_id else None
+    location = None
+    if information and getattr(information, 'location_id', None):
+        location = db.query(Location).filter(Location.id == information.location_id).first()
+    officer = db.query(Officer).filter(Officer.id == notice.officer_id).first() if notice.officer_id else None
 
-    db.commit()                                                         # commit changes to database
-    db.refresh(notice)                                                  # refresh notice to get updated data                                  
-    
-    # resolve action description for response
+    # mapping of incoming field -> (target_object_name, attribute_name)
+    field_map = {
+        'FirstName': ('individual', 'first_name'),
+        'LastName': ('individual', 'last_name'),
+        'IndividualAddress': ('individual', 'address'),
+        'City': ('individual', 'city'),
+        'ResidenceState': ('individual', 'state_id'),
+        'ZipCode': ('individual', 'zip_code'),
+        'DriversLicense': ('individual', 'drivers_license'),
+        'IssuedState': ('individual', 'state_issued_id'),
+        'BirthDate': ('individual', 'birth_date'),
+        'Height': ('individual', 'height'),
+        'Weight': ('individual', 'weight'),
+        'Eyes': ('individual', 'eyes'),
+
+        'VehicleLicense': ('vehicle', 'vehicle_license'),
+        'RegisteredState': ('vehicle', 'state_id'),
+        'Colour': ('vehicle', 'colour'),
+        'Year': ('vehicle', 'year'),
+        'Make': ('vehicle', 'make'),
+        'Type': ('vehicle', 'type'),
+        'VIN': ('vehicle', 'vin'),
+        'RegisteredOwner': ('vehicle', 'registered_owner'),
+        'VehicleAddress': ('vehicle', 'address'),
+
+        'ViolationDate': ('information', 'violation_date'),
+        'District': ('information', 'district'),
+        'Detachment': ('information', 'detachment'),
+
+        'Miles': ('location', 'miles'),
+        'Direction': ('location', 'direction'),
+        'Town': ('location', 'town'),
+        'Road': ('location', 'road'),
+
+        'OfficersSignature': ('officer', 'officers_signature'),
+        'PersonnelNumber': ('officer', 'personnel_number'),
+
+        'ActionSelection': ('notice', 'action_id'),
+        'DriversSignature': ('notice', 'drivers_signature'),
+    }
+
+    for key, val in update_data.items():
+        if key == 'Violation':
+            # resolve violation text to id
+            if val:
+                violation_row = db.query(Violation).filter(Violation.violation == val).first()
+                if not violation_row:
+                    violation_row = db.query(Violation).filter(Violation.violation == 'Unspecified').first()
+                if violation_row:
+                    notice.violation_id = violation_row.id
+            continue
+
+        mapping = field_map.get(key)
+        if not mapping:
+            # unknown field - ignore
+            continue
+
+        target_name, attr = mapping
+        target = None
+        if target_name == 'individual':
+            target = individual
+        elif target_name == 'vehicle':
+            target = vehicle
+        elif target_name == 'information':
+            target = information
+        elif target_name == 'location':
+            target = location
+        elif target_name == 'officer':
+            target = officer
+        elif target_name == 'notice':
+            target = notice
+
+        if not target:
+            # target object not available - skip
+            continue
+
+        try:
+            setattr(target, attr, val)
+        except Exception:
+            # ignore attribute errors and move on
+            continue
+
+    db.commit()
+    db.refresh(notice)
+
     action_row = db.query(Action).filter(Action.id == notice.action_id).first() if notice.action_id else None
 
-    return {                                                            # return updated notice as a dict compatible with Notice schema
-        "NoticeID": notice.id,
-        "IndividualID": notice.individual_id,
-        "VehicleID": notice.vehicle_id,
-        "InformationID": notice.information_id,
-        "ViolationID": notice.violation_id,
-        "OfficerID": notice.officer_id,
-        "ActionSelection": action_row.description if action_row else None,
-        "DriversSignature": notice.drivers_signature,
+    return {
+        'NoticeID': notice.id,
+        'IndividualID': notice.individual_id,
+        'VehicleID': notice.vehicle_id,
+        'InformationID': notice.information_id,
+        'ViolationID': notice.violation_id,
+        'OfficerID': notice.officer_id,
+        'ActionSelection': action_row.description if action_row else None,
+        'DriversSignature': notice.drivers_signature,
     }
 
 def update_violation(db: Session, notice_id: int, violation_in: str):
