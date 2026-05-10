@@ -52,7 +52,7 @@ class NoticeBase(BaseModel):
     OfficersSignature: Optional[str] = None
     PersonnelNumber: Optional[int] = None
     # Notice fields
-    ActionSelection: Optional[int] = None
+    ActionSelection: Optional[str] = None
     DriversSignature: Optional[str] = None
 
     class Config:
@@ -99,7 +99,7 @@ class NoticeCreate(NoticeBase):
     OfficersSignature: str
     PersonnelNumber: int
     # Notice fields
-    ActionSelection: int
+    ActionSelection: str
     DriversSignature: str
 
 

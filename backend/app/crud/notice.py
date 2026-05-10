@@ -9,6 +9,7 @@ from app.models.notice import ( FullNotice,
     Violation,
     Officer,
     Notice,
+    Action,
 )
 from app.schemas.notice import NoticeCreate, NoticeUpdate
 
@@ -122,11 +123,13 @@ def create_notice(db: Session, notice_in: NoticeCreate):
         db.add(information)
         db.flush()
         
-        violation = Violation(
-            violation=notice_in.Violation,
-        )
-        db.add(violation)
-        db.flush()
+        # resolve violation against predefined lookup table instead of creating a new record
+        violation_row = db.query(Violation).filter(Violation.violation == notice_in.Violation).first()
+        if not violation_row:
+            # fallback to 'Unspecified' if the provided violation text is not in lookup
+            violation_row = db.query(Violation).filter(Violation.violation == "Unspecified").first()
+            if not violation_row:
+                raise ValueError("Violation type not found and no 'Unspecified' lookup available")
         
         officer = Officer(
             officers_signature=notice_in.OfficersSignature,
@@ -135,11 +138,16 @@ def create_notice(db: Session, notice_in: NoticeCreate):
         db.add(officer)
         db.flush()
         
+        # ensure ActionSelection references an existing action
+        action_row = db.query(Action).filter(Action.id == notice_in.ActionSelection).first()
+        if not action_row:
+            raise ValueError("ActionSelection does not reference a valid Action")
+
         notice = Notice(
             individual_id=db.query(Individual).filter_by(first_name=notice_in.FirstName, last_name=notice_in.LastName).first().id,
             vehicle_id=vehicle.id,
             information_id=information.id,
-            violation_id=violation.id,
+            violation_id=violation_row.id,
             officer_id=officer.id,
             action_selection=notice_in.ActionSelection,
             drivers_signature=notice_in.DriversSignature,

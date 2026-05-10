@@ -67,6 +67,14 @@ class Violation(Base):
     violation = Column("Violation", Text, nullable=False)
 
 
+class Action(Base):
+    """SQLAlchemy ORM model for the 'Action' lookup table"""
+    __tablename__ = "Action"
+
+    id = Column("ActionID", Integer, primary_key=True, index=True)
+    description = Column("Description", Text)
+
+
 class Officer(Base):
     """SQLAlchemy ORM model for the 'Officer' table."""
     __tablename__ = "Officer"
@@ -86,7 +94,7 @@ class Notice(Base):
     information_id = Column("InformationID", Integer, nullable=False)
     violation_id = Column("ViolationID", Integer, nullable=False)
     officer_id = Column("OfficerID", Integer, nullable=False)
-    action_selection = Column("ActionSelection", Integer, nullable=False)
+    action_id = Column("ActionID", Integer, nullable=False)
     drivers_signature = Column("DriversSignature", String(100), nullable=False)
 
 
@@ -100,6 +108,7 @@ class FullNotice(Base):
     InformationID = Column(Integer)
     ViolationID = Column(Integer)
     OfficerID = Column(Integer)
+    ActionID = Column(Integer)
     # Individual fields
     FirstName = Column(String(100))
     LastName = Column(String(100))
@@ -138,5 +147,5 @@ class FullNotice(Base):
     OfficersSignature = Column(String(100))
     PersonnelNumber = Column(Integer)
     # Notice fields
-    ActionSelection = Column(Integer)
+    ActionSelection = Column(String(100))
     DriversSignature = Column(String(100))

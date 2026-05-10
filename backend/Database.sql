@@ -18,7 +18,7 @@ CREATE TABLE `Notice` (
     `InformationID` INT NOT NULL COMMENT 'int for ID number, not null as must have an value for the key',
     `ViolationID` INT NOT NULL COMMENT 'int for ID number, not null as must have an value for the key',
     `OfficerID` INT NOT NULL COMMENT 'int for ID number, not null as must have an value for the key',
-    `ActionSelection` INT NOT NULL COMMENT 'int for index of each action',
+    `ActionID` INT NOT NULL COMMENT 'int for index of each action',
     `DriversSignature` VARCHAR(100) NOT NULL COMMENT 'limited to 20 chars, for individuals name, update to image in future',
     CONSTRAINT `pk_Notice` PRIMARY KEY (`NoticeID`)
 );
@@ -131,6 +131,18 @@ CREATE TABLE `Violation` (
     CONSTRAINT `pk_Violation` PRIMARY KEY (`ViolationID`)
 );
 
+
+# ---------------------------------------------------------------------- #
+# Add table "Action" (lookup table for selectable actions)              #
+# ---------------------------------------------------------------------- #
+
+CREATE TABLE `Action` (
+    `ActionID` INT NOT NULL AUTO_INCREMENT COMMENT 'auto increment for each action',
+    `ActionSelection` TEXT COMMENT 'description of the action',
+    CONSTRAINT `pk_Action` PRIMARY KEY (`ActionID`)
+);
+
+
 # ---------------------------------------------------------------------- #
 # Add table "Officer"                                                    #
 # ---------------------------------------------------------------------- #
@@ -145,6 +157,25 @@ CREATE TABLE `Officer` (
 
 
 # ----------------------------------------------------------------------info---------------------------------------------------------------------- #
+
+
+# ---------------------------------------------------------------------- #
+# Add info into all tables for Violations                                #
+# ---------------------------------------------------------------------- #
+
+Insert into `Violation`(Violation) values ("Speeding");
+Insert into `Violation`(Violation) values ("Writing text while driving");
+Insert into `Violation`(Violation) values ("Reckless Driving");
+Insert into `Violation`(Violation) values ("Parking Violation");
+Insert into `Violation`(Violation) values ("Unspecified");
+
+# ---------------------------------------------------------------------- #
+# Add info into all tables for Actions                                   #
+# ---------------------------------------------------------------------- #
+
+Insert into `Action`(ActionSelection) values ("This is a warning. no further action is required.");
+Insert into `Action`(ActionSelection) values ("Yois are released to take this vehicle to a place or repair. Continued operation on the roadway is not authorized.");
+Insert into `Action`(ActionSelection) values ("CORRECT VIOLATION(S) IMMEDIATELY. Return this signed card for proof of complianco authin 15/30 days. (if this box is chnclied)"); # genuinely what does that thing say lmao
 
 
 # ---------------------------------------------------------------------- #
@@ -233,10 +264,8 @@ SET @LocationID = LAST_INSERT_ID();
 Insert into `Information`(LocationID,ViolationDate,District,Detachment) 
 values (@LocationID,"2003-11-7 09:35:00",2,17);
 SET @InformationID = LAST_INSERT_ID();
-Insert into `Violation`(Violation) 
-values ("Writing text while driving");
-SET @ViolationID = LAST_INSERT_ID();
-Insert into `Notice`(IndividualID,VehicleID,InformationID,ViolationID,OfficerID,ActionSelection,DriversSignature) 
+SET @ViolationID = (SELECT ViolationID FROM Violation WHERE Violation LIKE "Writing text while driving" LIMIT 1);
+Insert into `Notice`(IndividualID,VehicleID,InformationID,ViolationID,OfficerID,ActionID,DriversSignature) 
 values (@IndividualID,@VehicleID,@InformationID,@ViolationID,(SELECT OfficerID FROM Officer WHERE OfficersSignature LIKE "S Scott"),1,
 (SELECT CONCAT(FirstName,LastName) FROM `Individual` WHERE IndividualID like @IndividualID));
 
@@ -260,11 +289,9 @@ SET @LocationID = LAST_INSERT_ID();
 Insert into `Information`(LocationID,ViolationDate,District,Detachment) 
 values (@LocationID,"1111-11-1 11:11:11",12345,12345);
 SET @InformationID = LAST_INSERT_ID();
-Insert into `Violation`(Violation) 
-values ("Speeding 15 mph over limit");
-SET @ViolationID = LAST_INSERT_ID();
-Insert into `Notice`(IndividualID,VehicleID,InformationID,ViolationID,OfficerID,ActionSelection,DriversSignature) 
-values (@IndividualID,@VehicleID,@InformationID,@ViolationID,(SELECT OfficerID FROM Officer WHERE OfficersSignature LIKE "Timothy Pearman"),12345,
+SET @ViolationID = (SELECT ViolationID FROM Violation WHERE Violation LIKE "Speeding" LIMIT 1);
+Insert into `Notice`(IndividualID,VehicleID,InformationID,ViolationID,OfficerID,ActionID,DriversSignature) 
+values (@IndividualID,@VehicleID,@InformationID,@ViolationID,(SELECT OfficerID FROM Officer WHERE OfficersSignature LIKE "Timothy Pearman"),1,
 (SELECT CONCAT(FirstName,LastName) FROM `Individual` WHERE IndividualID like @IndividualID));
 
 COMMIT;
@@ -276,10 +303,10 @@ COMMIT;
 START TRANSACTION;
 
 Insert into `Individual`(FirstName,LastName,Address,City,StateID,ZipCode,DriversLicense,StateIssuedID,BirthDate,Height,Weight,Eyes) 
-values ("Emma","Lewis","11757 78 Ave NW",NULL,(SELECT StateID FROM States WHERE State LIKE "Washington"),NULL,NULL,1,"1111-11-1 11:11:11","",12345,"");
+values ("John","Smith","10031 936 Ave SE","",(SELECT StateID FROM States WHERE State LIKE "Washington"),NULL,NULL,1,"1111-11-1 11:11:11","",12345,"");
 SET @IndividualID = LAST_INSERT_ID();
 Insert into `Vehicle`(VehicleLicense,StateID,Colour,Year,Make,Type,VIN,RegisteredOwner,Address) 
-values (NULL,1,NULL,12345,"","",NULL,"Emma_Lewis",NULL);
+values (NULL,1,NULL,12345,"","",NULL,"John_Smith",NULL);
 SET @VehicleID = LAST_INSERT_ID();
 Insert into `Location`(Miles,Direction,Town,Road) 
 values (12345,"","","");
@@ -287,92 +314,9 @@ SET @LocationID = LAST_INSERT_ID();
 Insert into `Information`(LocationID,ViolationDate,District,Detachment) 
 values (@LocationID,"1111-11-1 11:11:11",12345,12345);
 SET @InformationID = LAST_INSERT_ID();
-Insert into `Violation`(Violation) 
-values ("");
-SET @ViolationID = LAST_INSERT_ID();
-Insert into `Notice`(IndividualID,VehicleID,InformationID,ViolationID,OfficerID,ActionSelection,DriversSignature) 
-values (@IndividualID,@VehicleID,@InformationID,@ViolationID,(SELECT OfficerID FROM Officer WHERE OfficersSignature LIKE "Amy Owen"),12345,
-(SELECT CONCAT(FirstName,LastName) FROM `Individual` WHERE IndividualID like @IndividualID));
-
-COMMIT;
-
-# ---------------------------------------------------------------------- #
-# Add info into all tables for `Record 4`                                #
-# ---------------------------------------------------------------------- #
-
-START TRANSACTION;
-
-Insert into `Individual`(FirstName,LastName,Address,City,StateID,ZipCode,DriversLicense,StateIssuedID,BirthDate,Height,Weight,Eyes) 
-values ("Robert","Davis","11385 33 Ave NE",NULL,(SELECT StateID FROM States WHERE State LIKE "Washington"),NULL,NULL,1,"1111-11-1 11:11:11","",12345,"");
-SET @IndividualID = LAST_INSERT_ID();
-Insert into `Vehicle`(VehicleLicense,StateID,Colour,Year,Make,Type,VIN,RegisteredOwner,Address) 
-values (NULL,1,NULL,12345,"","",NULL,"Robert_Davis",NULL);
-SET @VehicleID = LAST_INSERT_ID();
-Insert into `Location`(Miles,Direction,Town,Road) 
-values (12345,"","","");
-SET @LocationID = LAST_INSERT_ID();
-Insert into `Information`(LocationID,ViolationDate,District,Detachment) 
-values (@LocationID,"1111-11-1 11:11:11",12345,12345);
-SET @InformationID = LAST_INSERT_ID();
-Insert into `Violation`(Violation) 
-values ("");
-SET @ViolationID = LAST_INSERT_ID();
-Insert into `Notice`(IndividualID,VehicleID,InformationID,ViolationID,OfficerID,ActionSelection,DriversSignature) 
-values (@IndividualID,@VehicleID,@InformationID,@ViolationID,(SELECT OfficerID FROM Officer WHERE OfficersSignature LIKE "Quinn Carr"),12345,
-(SELECT CONCAT(FirstName,LastName) FROM `Individual` WHERE IndividualID like @IndividualID));
-
-COMMIT;
-
-# ---------------------------------------------------------------------- #
-# Add info into all tables for `Record 5`                                #
-# ---------------------------------------------------------------------- #
-
-START TRANSACTION;
-
-Insert into `Individual`(FirstName,LastName,Address,City,StateID,ZipCode,DriversLicense,StateIssuedID,BirthDate,Height,Weight,Eyes) 
-values ("Mary","Wilson","11106 8500 Ave SW",NULL,(SELECT StateID FROM States WHERE State LIKE "Washington"),NULL,NULL,1,"1111-11-1 11:11:11","",12345,"");
-SET @IndividualID = LAST_INSERT_ID();
-Insert into `Vehicle`(VehicleLicense,StateID,Colour,Year,Make,Type,VIN,RegisteredOwner,Address) 
-values (NULL,1,NULL,12345,"","",NULL,"Mary_Wilson",NULL);
-SET @VehicleID = LAST_INSERT_ID();
-Insert into `Location`(Miles,Direction,Town,Road) 
-values (12345,"","","");
-SET @LocationID = LAST_INSERT_ID();
-Insert into `Information`(LocationID,ViolationDate,District,Detachment) 
-values (@LocationID,"1111-11-1 11:11:11",12345,12345);
-SET @InformationID = LAST_INSERT_ID();
-Insert into `Violation`(Violation) 
-values ("");
-SET @ViolationID = LAST_INSERT_ID();
-Insert into `Notice`(IndividualID,VehicleID,InformationID,ViolationID,OfficerID,ActionSelection,DriversSignature) 
-values (@IndividualID,@VehicleID,@InformationID,@ViolationID,(SELECT OfficerID FROM Officer WHERE OfficersSignature LIKE "Timothy Pearman"),12345,
-(SELECT CONCAT(FirstName,LastName) FROM `Individual` WHERE IndividualID like @IndividualID));
-
-COMMIT;
-
-# ---------------------------------------------------------------------- #
-# Add info into all tables for `Record 6`                                #
-# ---------------------------------------------------------------------- #
-
-START TRANSACTION;
-
-Insert into `Individual`(FirstName,LastName,Address,City,StateID,ZipCode,DriversLicense,StateIssuedID,BirthDate,Height,Weight,Eyes) 
-values ("William","Brown","11228 499 Ave NW",NULL,(SELECT StateID FROM States WHERE State LIKE "Washington"),NULL,NULL,1,"1111-11-1 11:11:11","",12345,"");
-SET @IndividualID = LAST_INSERT_ID();
-Insert into `Vehicle`(VehicleLicense,StateID,Colour,Year,Make,Type,VIN,RegisteredOwner,Address) 
-values (NULL,1,NULL,12345,"","",NULL,"William_Brown",NULL);
-SET @VehicleID = LAST_INSERT_ID();
-Insert into `Location`(Miles,Direction,Town,Road) 
-values (12345,"","","");
-SET @LocationID = LAST_INSERT_ID();
-Insert into `Information`(LocationID,ViolationDate,District,Detachment) 
-values (@LocationID,"1111-11-1 11:11:11",12345,12345);
-SET @InformationID = LAST_INSERT_ID();
-Insert into `Violation`(Violation) 
-values ("");
-SET @ViolationID = LAST_INSERT_ID();
-Insert into `Notice`(IndividualID,VehicleID,InformationID,ViolationID,OfficerID,ActionSelection,DriversSignature) 
-values (@IndividualID,@VehicleID,@InformationID,@ViolationID,(SELECT OfficerID FROM Officer WHERE OfficersSignature LIKE "Amy Owen"),12345,
+SET @ViolationID = (SELECT ViolationID FROM Violation WHERE Violation LIKE "Unspecified" LIMIT 1);
+Insert into `Notice`(IndividualID,VehicleID,InformationID,ViolationID,OfficerID,ActionID,DriversSignature) 
+values (@IndividualID,@VehicleID,@InformationID,@ViolationID,(SELECT OfficerID FROM Officer WHERE OfficersSignature LIKE "Timothy Pearman"),2,
 (SELECT CONCAT(FirstName,LastName) FROM `Individual` WHERE IndividualID like @IndividualID));
 
 COMMIT;
@@ -405,6 +349,10 @@ ALTER TABLE `Notice`
 ADD CONSTRAINT `fk_Notice_Officer` FOREIGN KEY (`OfficerID`)
 		REFERENCES `Officer`(`OfficerID`);
         
+ALTER TABLE `Notice`
+ADD CONSTRAINT `fk_Notice_Action` FOREIGN KEY (`ActionID`)
+    REFERENCES `Action`(`ActionID`);
+        
 ALTER TABLE `Individual`
 ADD CONSTRAINT `fk_Individual_States` FOREIGN KEY (`StateID`)
 		REFERENCES `States`(`StateID`);
@@ -431,7 +379,7 @@ ADD CONSTRAINT `fk_Information_Location` FOREIGN KEY (`LocationID`)
 # ---------------------------------------------------------------------- #
 
 CREATE OR REPLACE SQL SECURITY DEFINER VIEW `Full_Notice` AS		#`SQL SECURITY DEFINER` used to allow querying of parent tables since users are only given access to the views.
-SELECT NoticeID,Notice.IndividualID,Notice.VehicleID,Notice.InformationID,Notice.ViolationID,Notice.OfficerID,
+SELECT NoticeID,Notice.IndividualID,Notice.VehicleID,Notice.InformationID,Notice.ViolationID,Notice.OfficerID,Notice.ActionID,
 FirstName,LastName,Individual.Address AS IndividualAddress,City,StateOfResidence.State AS ResidenceState,ZipCode,DriversLicense,StateIssued.State AS IssuedState,BirthDate,Height,Weight,Eyes,	#Individual Table
 VehicleLicense,StateRegistered.State AS RegisteredState,Colour,Year,Make,Type,VIN,RegisteredOwner,Vehicle.Address AS VehicleAddress,															#Vehicle Table
 ViolationDate,District,Detachment,																																								#Information Table
@@ -458,7 +406,10 @@ INNER JOIN Violation
 	ON Notice.ViolationID = Violation.ViolationID
 INNER JOIN Officer
 	ON Notice.OfficerID = Officer.OfficerID
+ INNER JOIN Action
+    ON Notice.ActionID = Action.ActionID
 ORDER BY NoticeID ASC;
+    
 
 # ---------------------------------------------------------------------- #
 # Add View "Citizen Access"                                              #
