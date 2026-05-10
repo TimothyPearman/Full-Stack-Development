@@ -33,8 +33,14 @@ except Exception as e:
 app.include_router(notice.router)
 app.include_router(user.router)
 
-# root endpoint for debugging1
+# root endpoint for debugging
 @app.get("/")
 async def root():
-    """Simple health-check endpoint."""
-    return {"message": "assessment 2 API is working, yay!"}
+    """Simple root endpoint."""
+    return {"message": "assessment 3 API is working, yippee!"}
+
+# health endpoint for testing
+@app.get("/health")
+async def health():
+    """Health check endpoint."""
+    return {"status": "ok"}

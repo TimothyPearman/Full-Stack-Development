@@ -7,3 +7,6 @@ pymysql
 passlib[bcrypt]
 python-multipart
 PyJWT
+
+pytest
+httpx

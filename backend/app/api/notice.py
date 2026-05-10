@@ -60,21 +60,22 @@ async def get_notices(token: str = Depends(oauth2_scheme), db: Session = Depends
     
     return notices
 
-@router.get("/me/vehicle/{vehicle_id}", response_model=List[FullNotice], summary="Get all notices for a specific vehicle")
-async def get_notices_by_vehicle(vehicle_id: int, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    """Get all notices for a specific vehicle of the authenticated user."""
-    user = check_valid_user(token, db)
-    
-    notices = crud_notice.get_notices_for_individual_by_vehicle(db, user.id, vehicle_id)    # get all notices for the authenticated user using their user id as the individual id
-    return notices
 
-@router.get("/me/officer/{officer_id}", response_model=List[FullNotice], summary="Get all notices from a specific officer")
-async def get_notices_by_officer(officer_id: int, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    """Get all notices for a specific officer of the authenticated user."""
-    user = check_valid_user(token, db)
-    
-    notices = crud_notice.get_notices_for_individual_by_officer(db, user.id, officer_id)    # get all notices for the authenticated user using their user id as the individual id
-    return notices
+#@router.get("/me/vehicle/{vehicle_id}", response_model=List[FullNotice], summary="Get all notices for a specific vehicle")
+#async def get_notices_by_vehicle(vehicle_id: int, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+#    """Get all notices for a specific vehicle of the authenticated user."""
+#    user = check_valid_user(token, db)
+#    
+#    notices = crud_notice.get_notices_for_individual_by_vehicle(db, user.id, vehicle_id)    # get all notices for the authenticated user using their user id as the individual id
+#    return notices
+#
+#@router.get("/me/officer/{officer_id}", response_model=List[FullNotice], summary="Get all notices from a specific officer")
+#async def get_notices_by_officer(officer_id: int, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+#    """Get all notices for a specific officer of the authenticated user."""
+#    user = check_valid_user(token, db)
+#    
+#    notices = crud_notice.get_notices_for_individual_by_officer(db, user.id, officer_id)    # get all notices for the authenticated user using their user id as the individual id
+#    return notices
 
 
 @router.get("/{id}", response_model=Notice, summary="Get a notice by ID")
@@ -159,18 +160,18 @@ async def update_notice(id: int, notice_in: NoticeUpdate, token: str = Depends(o
     else:
         raise HTTPException(status_code=403, detail="insufficient clearance: only officers can update notices")
 
-@router.put("/{id}/violations/{violation}", response_model=Notice, summary="Update a violation in a notice")
-async def update_violation(id: int, violation: str, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    """Update an existing notice in the database."""
-    user = check_valid_user(token, db)              # check if the user is valid
-    clearance = get_user_clearance(user, db)        # check the users clearance level to see if they are allowed to create a notice
-    if clearance == "Officer":
-        notice = crud_notice.update_violation(db, id, violation)
-        if not notice:
-            raise HTTPException(status_code=404, detail="Notice not found")
-        return notice
-    else:
-        raise HTTPException(status_code=403, detail="insufficient clearance: only officers can update notices")
+#@router.put("/{id}/violations/{violation}", response_model=Notice, summary="Update a violation in a notice")
+#async def update_violation(id: int, violation: str, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+#    """Update an existing notice in the database."""
+#    user = check_valid_user(token, db)              # check if the user is valid
+#    clearance = get_user_clearance(user, db)        # check the users clearance level to see if they are allowed to create a notice
+#    if clearance == "Officer":
+#        notice = crud_notice.update_violation(db, id, violation)
+#        if not notice:
+#            raise HTTPException(status_code=404, detail="Notice not found")
+#        return notice
+#    else:
+#        raise HTTPException(status_code=403, detail="insufficient clearance: only officers can update notices")
 
 """
 DELETE Endpoints:
@@ -188,15 +189,15 @@ async def delete_notice(id: int, token: str = Depends(oauth2_scheme), db: Sessio
     else:
         raise HTTPException(status_code=403, detail="insufficient clearance: only officers can delete notices")
 
-@router.delete("/{id}/violations", response_model=Notice, summary="Remove a violation from a notice")
-async def delete_violation(id: int, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    """delete a violation from an existing notice in the database"""
-    user = check_valid_user(token, db)              # check if the user is valid
-    clearance = get_user_clearance(user, db)        # check the users clearance level to see if they are allowed to delete a notice
-    if clearance == "Officer":
-        notice = crud_notice.delete_violation(db, id)
-        if not notice:
-            raise HTTPException(status_code=404, detail="Notice not found")
-        return notice
-    else:
-        raise HTTPException(status_code=403, detail="insufficient clearance: only officers can delete notices")
+#@router.delete("/{id}/violations", response_model=Notice, summary="Remove a violation from a notice")
+#async def delete_violation(id: int, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+#    """delete a violation from an existing notice in the database"""
+#    user = check_valid_user(token, db)              # check if the user is valid
+#    clearance = get_user_clearance(user, db)        # check the users clearance level to see if they are allowed to delete a notice
+#    if clearance == "Officer":
+#        notice = crud_notice.delete_violation(db, id)
+#        if not notice:
+#            raise HTTPException(status_code=404, detail="Notice not found")
+#        return notice
+#    else:
+#        raise HTTPException(status_code=403, detail="insufficient clearance: only officers can delete notices")

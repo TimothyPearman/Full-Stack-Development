@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 import os
+from uuid import uuid4
 
 import jwt
 from jwt import ExpiredSignatureError, InvalidTokenError
@@ -19,6 +20,8 @@ def create_access_token(user_id: int):
     payload = {                                                                             # what the token contains
         "sub": str(user_id),                                                                # subject of the token
         "exp": expire_at,                                                                   # expiration time of the token
+        "iat": datetime.now(timezone.utc),                                                  # issued-at time to avoid identical tokens in quick succession
+        "jti": str(uuid4()),                                                                # unique token id for denylist isolation
     }
     
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)

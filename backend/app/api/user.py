@@ -142,6 +142,7 @@ async def refresh_token(token: str = Depends(oauth2_scheme), db: Session = Depen
         "access_token": access_token,
         "token_type": "bearer",
         "expires_in": ACCESS_TOKEN_EXPIRE_MINUTES,
+        "clearance": user.Clearance,
     }
 
 @router.delete("/token", summary="revoke token")
