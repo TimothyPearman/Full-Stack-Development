@@ -1,6 +1,7 @@
 # app/schemas/review.py
 from pydantic import BaseModel
 from typing import Optional
+from datetime import datetime
 
 class Token(BaseModel):
     """schema for the token response when a user logs in"""
@@ -18,7 +19,7 @@ class User(UserBase):
     """schema returned by the API for a user"""
     id: int
     FullName: Optional[str] = None
-    DateOFBirth: Optional[str] = None
+    DateOFBirth: Optional[datetime] = None
     CurrentAddress: Optional[str] = None
     LicenseNumber: Optional[str] = None
     licensePostcode: Optional[str] = None

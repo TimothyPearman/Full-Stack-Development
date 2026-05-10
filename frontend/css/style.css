@@ -106,3 +106,68 @@ body {
     border-radius: 4px 4px 0 0;
 }
 .tab-btn.active { background: #1F3864; color: #fff; }
+
+/* ── Notice Cards ── */
+.notice-card {
+    border: 1px solid #d9dee8;
+    border-radius: 10px;
+    margin-bottom: 16px;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    overflow: hidden;
+}
+
+.notice-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 18px;
+    border: none;
+    background: #f6f8fc;
+    color: #152238;
+    cursor: pointer;
+    text-align: left;
+    font: inherit;
+}
+
+.notice-toggle:hover {
+    background: #f0f4fa;
+}
+
+.notice-toggle-title {
+    font-weight: 600;
+}
+
+.notice-toggle-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #1F3864;
+    font-weight: 700;
+}
+
+.notice-toggle-icon {
+    display: inline-block;
+}
+
+.notice-details {
+    padding: 16px 18px;
+}
+
+.notice-details[hidden] {
+    display: none;
+}
+
+.notice-field {
+    display: grid;
+    grid-template-columns: minmax(160px, 220px) 1fr;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid #e3e7ef;
+}
+
+.notice-field:last-child {
+    border-bottom: none;
+}

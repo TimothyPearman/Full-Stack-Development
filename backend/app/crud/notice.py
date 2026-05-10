@@ -23,16 +23,16 @@ def get_all_notices(db: Session):
     result = db.execute(query)   # execute query
     return result.fetchall()     # return all results as a list of tuples
 
-def get_notices_for_individual(db: Session, individual_id: int):
-    """return all Notice records from Full_Notice view for a specific individual"""
+def get_notices_for_individual(db: Session, registered_owner: str):
+    """return all Notice records from Full_Notice view for a specific registered owner"""
     query = text("""
         SELECT *
         FROM Full_Notice
-        WHERE IndividualID = :individual_id
+        WHERE RegisteredOwner = :registered_owner
         ORDER BY NoticeID ASC
     """)
 
-    result = db.execute(query, {"individual_id": individual_id})    # execute query with provided parameter
+    result = db.execute(query, {"registered_owner": registered_owner})    # execute query with provided parameter
 
     return result.fetchall()
 

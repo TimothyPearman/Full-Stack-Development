@@ -54,7 +54,7 @@ async def get_notices(token: str = Depends(oauth2_scheme), db: Session = Depends
     if clearance == "Officer":                                                   # if user is an officer, they can see all notices
         notices = crud_notice.get_all_notices(db)
     elif clearance == "Civilian":                                                   # if user is a civilian, they can only see notices issued to them
-        notices = crud_notice.get_notices_for_individual(db, user.id)   # get all notices for the authenticated user using their user id as the individual id
+        notices = crud_notice.get_notices_for_individual(db, user.Username)   # get all notices for the authenticated user using their username as the registered owner
     else :
         raise HTTPException(status_code=403, detail="Invalid clearance level: only officers and civilians can view notices")
     

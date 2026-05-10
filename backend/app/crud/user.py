@@ -1,29 +1,30 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from app.models.user import User as UserModel
-from app.schemas import user
+# schemas not required in this module
 
 def authenticate_user(db: Session, username: str, password: str):
     """authenticate a user by username and password"""
-    user = get_user_by_username(db, username)   # retrieve user from database
-    
-    if not user:                    # check if user exists
+    user_obj = get_user_by_username(db, username)   # retrieve user from database
+
+    if user_obj is None:                # check if user exists
         return None
-    
-    if user.password != password:   # check if password matches
+
+    # use getattr to avoid static analysis issues when attribute types are SQLAlchemy columns
+    if getattr(user_obj, "password", None) != password:   # check if password matches
         return None
-    
-    return user
+
+    return user_obj
 
 def get_user_by_username(db: Session, username: str):
     """return a user by username"""
     return db.query(UserModel).filter(UserModel.Username == username).first()   # retrieve user record from the database by username
 
 def create_user(db: Session, username: str, password: str, clearance: str, 
-                fullName: str = None, dateOfBirth: str = None, currentAddress: str = None,
-                driverLicenseNumber: str = None, postcode: str = None, 
-                nationalInsurance: str = None, vehicleRegNumber: str = None,
-                email: str = None, phone: str = None):
+                fullName: str = "", dateOfBirth: str = "", currentAddress: str = "",
+                driverLicenseNumber: str = "", postcode: str = "", 
+                nationalInsurance: str = "", vehicleRegNumber: str = "",
+                email: str = "", phone: str = ""):
     """create a new user"""
     user = UserModel(
         Username=username,
@@ -46,20 +47,20 @@ def create_user(db: Session, username: str, password: str, clearance: str,
     
     return user         # return newly created user object
 
-def update_user_contact_info(db: Session, user_id: int, email: str = None, phone: str = None):
+def update_user_contact_info(db: Session, user_id: int, email: str = "", phone: str = ""):
     """update a user's email and/or phone number"""
-    user = db.query(UserModel).filter(UserModel.id == user_id).first()
+    user_obj = db.query(UserModel).filter(UserModel.id == user_id).first()
 
-    if not user:
+    if not user_obj:
         return None
 
     if email is not None:
-        user.Email = email
+        setattr(user_obj, "Email", email)
 
     if phone is not None:
-        user.PhoneNumber = phone
+        setattr(user_obj, "PhoneNumber", phone)
 
     db.commit()
-    db.refresh(user)
+    db.refresh(user_obj)
 
-    return user
+    return user_obj

@@ -57,17 +57,6 @@
         <section id="view-info" class="view">
             <h2>Information</h2>
             <p>This is the New York State Patrol system allowing different stakeholders to interact with the citation management system.</p>
-            <p>for testing, the following credentials may be used:</p>
-            <p>Driver/Vehicle Owner</p>
-            <ul>
-                <li>Username: John_Smith</li>
-                <li>Password: JPass</li>
-            </ul>
-            <p>Administrator</p>
-            <ul>
-                <li>Username: Timothy_Pearman</li>
-                <li>Password: TPass</li>
-            </ul>
         </section>
         <section id="view-register" class="view">
             <h2>Driver/Vehicle Owner Registration</h2>
@@ -183,6 +172,17 @@
         <section id="view-login" class="view">
             <h2>Login</h2>
             <p>Select a Login Portal to continue</p>
+            <p>for testing, the following credentials may be used:</p>
+            <p>Driver/Vehicle Owner</p>
+            <ul>
+                <li>Username: John_Smith</li>
+                <li>Password: JPass</li>
+            </ul>
+            <p>Administrator</p>
+            <ul>
+                <li>Username: Timothy_Pearman</li>
+                <li>Password: TPass</li>
+            </ul>
         </section>
 
         
@@ -245,19 +245,17 @@
         <!-- Driver/Vehicle Owner interface views -->
         <section id="view-user-dashboard" class="view">
             <h2>Driver/Vehicle Owner dashboard</h2>
-            <p>view-user-dashboard</p>
-            <h2>All Books</h2>
-            <div id="list-controls">
-                <input
-                    type="text"
-                    id="search-input"
-                    placeholder="Search by title or author..."
-                    style="padding:8px; width:300px; border:1px solid #ccc; border-radius:4px; font-size:1rem;"
+            <p>select citation to expand and view details below.</p>
+            <div id="user-dashboard-controls" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:16px 0;">
+                <button
+                    id="refresh-btn"
+                    style="background:#1F3864;color:#fff;border:none;padding:10px 24px;border-radius:4px;cursor:pointer;"
                 >
-                <button id="refresh-btn" onclick="state.books = []; loadBookList()">
                     &#8635; Refresh
                 </button>
+                <div id="user-dashboard-status" aria-live="polite"></div>
             </div>
+            <div id="user-dashboard-notices"></div>
         </section>
         <section id="view-user-profile" class="view">
             <h2>Driver/Vehicle Owner Profile</h2>

@@ -182,6 +182,7 @@ function navigateTo(route, params = {}) {
         // user routes
         case 'user-dash':
             setBreadcrumb([{ label: 'User' }, { label: 'Dashboard' }]);
+            loadUserNotices();
             break;
         case 'user-profile':
             setBreadcrumb([{ label: 'User' }, { label: 'Profile' }]);
@@ -364,6 +365,24 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    const refreshBtn = document.getElementById('refresh-btn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function() {
+            loadUserNotices();
+        });
+    }
+
+    const userDashboardNotices = document.getElementById('user-dashboard-notices');
+    if (userDashboardNotices) {
+        userDashboardNotices.addEventListener('click', function(event) {
+            const button = event.target.closest('.notice-toggle');
+            if (!button) {
+                return;
+            }
+            toggleNoticeDetails(button);
+        });
+    }
+
     window.addEventListener('hashchange', routeFromHash);
     setVisibleNav('main-nav');
     routeFromHash();
@@ -489,12 +508,23 @@ function handleLogout() {
             state.token = null;
             state.currentUser = null;
             state.clearance = null;
-            state.myBooks = [];
+            state.notices = [];
             showToast('You have been logged out.');
             navigateTo('info');
             updateActiveNav('info');
         }
     );
+}
+
+/**
+ * confirmAction(message, callback) – shows a confirmation dialog
+ * @param {string} message – the confirmation message
+ * @param {function} callback – function to call if user confirms
+ */
+function confirmAction(message, callback) {
+    if (window.confirm(message)) {
+        callback();
+    }
 }
 
 // Registration handler
@@ -579,6 +609,15 @@ function handleRegister() {
     if (formData.password !== formData.passwordConfirm) {
         if (errorText) {
             errorText.textContent = 'Passwords do not match.';
+        }
+        return;
+    }
+
+    // check password strength (at least 8 characters, with uppercase and lowercaseletters and numbers)
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    if (!passwordRegex.test(formData.password)) {
+        if (errorText) {
+            errorText.textContent = 'Password must be at least 8 characters long and include uppercase, lowercase letters, and numbers.';
         }
         return;
     }
@@ -755,13 +794,172 @@ function handleUpdateUserContactInfo() {
     });
 }
 
-/**
- * confirmAction(message, callback) – shows a confirmation dialog
- * @param {string} message – the confirmation message
- * @param {function} callback – function to call if user confirms
- */
-function confirmAction(message, callback) {
-    if (window.confirm(message)) {
-        callback();
+function formatNoticeValue(key, value) {
+    if (value === null || value === undefined || value === '') {
+        return '-';
     }
+
+    if (typeof value === 'string' && /date$/i.test(key)) {
+        const parsedDate = new Date(value);
+        if (!Number.isNaN(parsedDate.getTime())) {
+            return parsedDate.toLocaleString();
+        }
+    }
+
+    if (value instanceof Date && !Number.isNaN(value.getTime())) {
+        return value.toLocaleString();
+    }
+
+    return String(value);
+}
+
+function toggleNoticeDetails(button) {
+    // if button is null or doesn't have data-target attribute, do nothing
+    if (!button) {
+        return;
+    }
+
+    // get the id of the details panel from the button's data-target attribute
+    const targetId = button.getAttribute('data-target');
+    if (!targetId) {
+        return;
+    }
+
+    // find the details panel element by id
+    const detailsPanel = document.getElementById(targetId);
+    if (!detailsPanel) {
+        return;
+    }
+
+    // toggle the visibility of the details panel
+    const isExpanded = button.getAttribute('aria-expanded') === 'true';
+    button.setAttribute('aria-expanded', String(!isExpanded));
+    detailsPanel.hidden = isExpanded;
+    button.querySelector('.notice-toggle-icon').textContent = isExpanded ? '+' : '−';
+}
+
+function buildNoticeFieldsHtml(notice) {
+    return Object.entries(notice)
+        .map(function([key, value]) {
+            const displayValue = formatNoticeValue(key, value);
+            return `<div class="notice-field">
+                <strong>${key}:</strong>
+                <span>${displayValue}</span>
+            </div>`;
+        })
+        .join('');
+}
+
+function buildNoticeHeaderHtml(displayId, detailsId) {
+    return `<button type="button" class="notice-toggle" data-target="${detailsId}" aria-expanded="false">
+        <span class="notice-toggle-title">Citation ID: ${displayId}</span>
+        <span class="notice-toggle-action">
+            <span class="notice-toggle-icon">+</span>
+            <span>Show details</span>
+        </span>
+    </button>`;
+}
+
+function buildNoticeArticleHtml(notice, displayId) {
+    const noticeId = notice.NoticeID != null ? String(notice.NoticeID) : String(state.notices.indexOf(notice));
+    const detailsId = 'notice-details-' + noticeId;
+    const headerHtml = buildNoticeHeaderHtml(displayId, detailsId);
+    const fieldsHtml = buildNoticeFieldsHtml(notice);
+    
+    return `<article class="notice-card">
+        ${headerHtml}
+        <div id="${detailsId}" class="notice-details" hidden>
+            ${fieldsHtml}
+        </div>
+    </article>`;
+}
+
+function renderUserNotices() {
+    const noticesContainer = document.getElementById('user-dashboard-notices');
+    const statusElement = document.getElementById('user-dashboard-status');
+
+    // ensure container exists before trying to render
+    if (!noticesContainer) {
+        return;
+    }
+
+    // clear existing notices
+    noticesContainer.innerHTML = '';
+
+    // if no notices, show message
+    if (!state.notices.length) {
+        if (statusElement) {
+            statusElement.textContent = 'No citation notices found.';
+        }
+        noticesContainer.innerHTML = '<p>No citation notices are available for your account.</p>';
+        return;
+    }
+
+    // show count of loaded notices
+    if (statusElement) {
+        statusElement.textContent = state.notices.length + ' citation notice' + (state.notices.length === 1 ? '' : 's') + ' loaded.';
+    }
+
+    // render each notice as a collapsible card
+    noticesContainer.innerHTML = state.notices.map(function(notice, index) {
+        return buildNoticeArticleHtml(notice, index + 1);
+    }).join('');
+}
+
+function loadUserNotices() {
+    // Check if user is authenticated
+    if (!state.token) {
+        showToast('Please log in to view your citation notices.', 3000);
+        navigateTo('user-login');
+        return;
+    }
+
+    const noticesContainer = document.getElementById('user-dashboard-notices');
+    const statusElement = document.getElementById('user-dashboard-status');
+
+    state.isLoading = true;
+    state.lastError = null;
+
+    if (statusElement) {
+        statusElement.textContent = 'Loading citation notices...';
+    }
+
+    if (noticesContainer) {
+        noticesContainer.innerHTML = '<p>Loading citation notices...</p>';
+    }
+
+    fetch(API_URL + '/notices/me', {
+        method: 'GET',
+        headers: {
+            'Authorization': 'Bearer ' + state.token
+        }
+    })
+    .then(function(response) {
+        return response.json().then(function(data) {
+            if (!response.ok) {
+                throw new Error(data.detail || 'Failed to load citation notices');
+            }
+            return data;
+        });
+    })
+    .then(function(data) {
+        state.notices = Array.isArray(data) ? data : [];
+        state.isLoading = false;
+        renderUserNotices();
+    })
+    .catch(function(error) {
+        state.isLoading = false;
+        state.lastError = error.message;
+        state.notices = [];
+
+        if (statusElement) {
+            statusElement.textContent = error.message;
+        }
+
+        if (noticesContainer) {
+            noticesContainer.innerHTML = '<p>' + error.message + '</p>';
+        }
+
+        showToast(error.message, 3000);
+    });
 }

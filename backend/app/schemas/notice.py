@@ -9,11 +9,11 @@ class NoticeBase(BaseModel):
     """base schema for a notice with all fields from the Full_Notice view as optional since some may be null"""
     # ID fields
     NoticeID: Optional[int] = None
-    IndividualID: Optional[int] = None
-    VehicleID: Optional[int] = None
-    InformationID: Optional[int] = None
-    ViolationID: Optional[int] = None
-    OfficerID: Optional[int] = None
+    #IndividualID: Optional[int] = None
+    #VehicleID: Optional[int] = None
+    #InformationID: Optional[int] = None
+    #ViolationID: Optional[int] = None
+    #OfficerID: Optional[int] = None
     # Individual fields
     FirstName: Optional[str] = None
     LastName: Optional[str] = None
