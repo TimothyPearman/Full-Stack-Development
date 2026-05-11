@@ -1,11 +1,29 @@
 import os
 import sys
+import logging
+import time
 from datetime import datetime, timezone
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from app.api import notice, user    # import the routers to be registered with the main app
 from app.db.init_db import init_db  # import the database initialization function to ensure tables exist on startup
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+class LoggingMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        start_time = time.time()
+        response = await call_next(request)
+        process_time = time.time() - start_time
+        
+        logger.info(
+            f"{request.method} {request.url.path} - Status: {response.status_code} - Duration: {process_time:.3f}s"
+        )
+        return response
 
 
 # Startup sanity check: ensure SECRET_KEY is set and long enough for HMAC-SHA256
@@ -31,6 +49,8 @@ app = FastAPI(
     description="This API allows users to manage and retrieve information about NYC traffic violation notices. yippee",
 )
 
+app.add_middleware(LoggingMiddleware)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
@@ -43,8 +63,9 @@ app.add_middleware(
 # ensure database tables exist
 try:
     init_db()
+    logger.info("Database initialized successfully.")
 except Exception as e:
-    print(f"Error initializing the database: {e}") # database is unreachable
+    logging.error(f"Error initializing the database: {e}") # database is unreachable
 
 # Register the routers with the main app.
 app.include_router(notice.router)
