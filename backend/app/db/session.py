@@ -6,19 +6,29 @@ from sqlalchemy.orm import Session, sessionmaker
 
 
 def get_database_url() -> str:
-    database_url = os.getenv("DATABASE_URL")
-    if database_url:
-        return database_url
+    # Try environment variables for known database URLs
+    for env_name in ("DATABASE_URL_HOME", "DATABASE_URL_LAB"):
+        # strip whitespace and quotes
+        database_url = os.getenv(env_name, "").strip().strip('"').strip("'")
+        if database_url:
+            return database_url
 
-    database_host = os.getenv("DB_HOST", "localhost")
-    database_port = os.getenv("DB_PORT", "3306")
-    database_user = quote_plus(os.getenv("DB_USER", "root"))
-    database_password = quote_plus(os.getenv("DB_PASSWORD", ""))
-    database_name = quote_plus(os.getenv("DB_NAME", "Traffic_Correction_Notices"))
+    # If no full database URL is found, try to construct one from individual components
+    database_host = os.getenv("DB_HOST", "").strip()
+    database_port = os.getenv("DB_PORT", "").strip()
+    database_user = os.getenv("DB_USER", "").strip()
+    database_password = os.getenv("DB_PASSWORD", "")
+    database_name = os.getenv("DB_NAME", "").strip()
 
-    return (
-        f"mysql+pymysql://{database_user}:{database_password}"
-        f"@{database_host}:{database_port}/{database_name}"
+    if all((database_host, database_port, database_user, database_name)):
+        return (
+            f"mysql+pymysql://{quote_plus(database_user)}:{quote_plus(database_password)}"
+            f"@{database_host}:{database_port}/{quote_plus(database_name)}"
+        )
+
+    raise RuntimeError(
+        "No database configuration was found. Set DATABASE_URL_HOME, DATABASE_URL_LAB, "
+        ",or all of DB_HOST, DB_PORT, DB_USER, and DB_NAME for a new user."
     )
 
 

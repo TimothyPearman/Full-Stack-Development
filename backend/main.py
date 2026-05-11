@@ -1,7 +1,19 @@
+import os
+import sys
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api import notice, user    # import the routers to be registered with the main app
 from app.db.init_db import init_db  # import the database initialization function to ensure tables exist on startup
+
+
+# Startup sanity check: ensure SECRET_KEY is set and long enough for HMAC-SHA256
+secret_key = os.getenv("SECRET_KEY", "")
+if len(secret_key) < 32:
+    raise RuntimeError(
+        "SECRET_KEY must be at least 32 characters long. "
+        "Set a secure SECRET_KEY in .env or the environment before starting the app."
+    )
 
 # create the fastapi application instance.
 app = FastAPI(

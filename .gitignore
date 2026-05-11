@@ -4,4 +4,8 @@ __pycache__/
 .venv/
 venv/
 .env
-.vscode/
+
+#.vscode/
+
+# Ignore local .env overrides
+.env.local
