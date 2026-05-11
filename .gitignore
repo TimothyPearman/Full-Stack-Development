@@ -3,9 +3,10 @@ __pycache__/
 *$py.class
 .venv/
 venv/
-.env
 
+# adding for documentation
+#.env
 #.vscode/
 
 # Ignore local .env overrides
-.env.local
+#.env.local

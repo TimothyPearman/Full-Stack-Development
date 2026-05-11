@@ -1,5 +1,6 @@
 import os
 import sys
+from datetime import datetime, timezone
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,6 +15,9 @@ if len(secret_key) < 32:
         "SECRET_KEY must be at least 32 characters long. "
         "Set a secure SECRET_KEY in .env or the environment before starting the app."
     )
+
+# Get the current environment (development, production, etc.)
+APP_ENV = os.getenv("APP_ENV", "development")
 
 # create the fastapi application instance.
 app = FastAPI(
@@ -55,4 +59,8 @@ async def root():
 @app.get("/health")
 async def health():
     """Health check endpoint."""
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "env": APP_ENV,
+        "time": datetime.now(timezone.utc).isoformat()
+    }
