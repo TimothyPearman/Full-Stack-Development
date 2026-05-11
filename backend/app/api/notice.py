@@ -3,7 +3,7 @@ import logging
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, cast
 
 from app.db.session import get_db
 from app.schemas.notice import Notice, FullNotice, NoticeCreate, NoticeUpdate
@@ -60,7 +60,8 @@ async def get_notices(token: str = Depends(oauth2_scheme), db: Session = Depends
         notices = crud_notice.get_all_notices(db)
         logger.info("Notice list returned for officer user_id=%s count=%s", user.id, len(notices))
     elif clearance == "Civilian":                                                   # if user is a civilian, they can only see notices issued to them
-        notices = crud_notice.get_notices_for_individual(db, user.Username)   # get all notices for the authenticated user using their username as the registered owner
+        owner = cast(str, user.Username)  # satisfy type checker
+        notices = crud_notice.get_notices_for_individual(db, owner)   # get all notices for the authenticated user using their username as the registered owner
         logger.info("Notice list returned for civilian user_id=%s count=%s", user.id, len(notices))
     else :
         logger.warning("Notice list denied for user_id=%s due to invalid clearance=%s", user.id, clearance)

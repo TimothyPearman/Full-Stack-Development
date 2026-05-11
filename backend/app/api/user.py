@@ -4,7 +4,7 @@ import logging
 from fastapi import APIRouter, Depends, Form, HTTPException
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from typing import List, Annotated, Optional
+from typing import List, Annotated, Optional, cast
 
 from app.db.session import get_db
 from app.schemas.user import User, Token, Clearance, UserRegister
@@ -21,15 +21,15 @@ async def get_user_register_form(
     username: str = Form(),
     password: str = Form(),
     clearance: str = Form(),
-    fullName: str = Form(None),
-    dateOfBirth: str = Form(None),
-    currentAddress: str = Form(None),
-    driverLicenseNumber: str = Form(None),
-    postcode: str = Form(None),
-    nationalInsurance: str = Form(None),
-    vehicleRegNumber: str = Form(None),
-    email: str = Form(None),
-    phone: str = Form(None)
+    fullName: Optional[str] = Form(None),
+    dateOfBirth: Optional[str] = Form(None),
+    currentAddress: Optional[str] = Form(None),
+    driverLicenseNumber: Optional[str] = Form(None),
+    postcode: Optional[str] = Form(None),
+    nationalInsurance: Optional[str] = Form(None),
+    vehicleRegNumber: Optional[str] = Form(None),
+    email: Optional[str] = Form(None),
+    phone: Optional[str] = Form(None)
 ) -> UserRegister:
     """Extract form fields into UserRegister model"""
     return UserRegister(
@@ -123,7 +123,7 @@ async def update_user_contact_info(
     )
     user = check_valid_user(token, db)
 
-    updated_user = crud_user.update_user_contact_info(db, user.id, email=email, phone=phone)
+    updated_user = crud_user.update_user_contact_info(db, cast(int, user.id), email=email or "", phone=phone or "")
     if not updated_user:
         logger.warning("User contact update failed: user not found for user_id=%s", user.id)
         raise HTTPException(status_code=404, detail="User not found")
@@ -144,7 +144,7 @@ async def issue_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token = create_access_token(user.id)                                         # create tokenr
+    access_token = create_access_token(cast(int, user.id))                                         # create tokenr
     logger.info("Token issued for user_id=%s", user.id)
     
     return {
@@ -159,7 +159,7 @@ async def refresh_token(token: str = Depends(oauth2_scheme), db: Session = Depen
     """refresh the current token by revoking the old one and issuing a new one"""
     user = check_valid_user(token, db)                                                  # check if logged in user still exists
     logger.info("Token refresh requested for user_id=%s", user.id)
-    access_token = create_access_token(user.id)                                         # create new token              
+    access_token = create_access_token(cast(int, user.id))                                         # create new token              
     logger.info("Token refreshed for user_id=%s", user.id)
     
     return {

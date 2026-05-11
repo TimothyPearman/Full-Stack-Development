@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from app.models.user import User as UserModel
@@ -20,11 +22,21 @@ def get_user_by_username(db: Session, username: str):
     """return a user by username"""
     return db.query(UserModel).filter(UserModel.Username == username).first()   # retrieve user record from the database by username
 
-def create_user(db: Session, username: str, password: str, clearance: str, 
-                fullName: str = "", dateOfBirth: str = "", currentAddress: str = "",
-                driverLicenseNumber: str = "", postcode: str = "", 
-                nationalInsurance: str = "", vehicleRegNumber: str = "",
-                email: str = "", phone: str = ""):
+def create_user(
+    db: Session,
+    username: str,
+    password: str,
+    clearance: str,
+    fullName: Optional[str] = None,
+    dateOfBirth: Optional[str] = None,
+    currentAddress: Optional[str] = None,
+    driverLicenseNumber: Optional[str] = None,
+    postcode: Optional[str] = None,
+    nationalInsurance: Optional[str] = None,
+    vehicleRegNumber: Optional[str] = None,
+    email: Optional[str] = None,
+    phone: Optional[str] = None,
+):
     """create a new user"""
     user = UserModel(
         Username=username,
