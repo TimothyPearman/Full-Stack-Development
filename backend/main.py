@@ -16,12 +16,16 @@ if len(secret_key) < 32:
         "Set a secure SECRET_KEY in .env or the environment before starting the app."
     )
 
+# cors settings from environment variables 
+CORS_ORIGINS = [url.strip() for url in os.getenv("CORS_ORIGINS", "").split(",") if url.strip()]
+CORS_METHODS = [m.strip() for m in os.getenv("CORS_METHODS", "").split(",") if m.strip()]
+CORS_HEADERS = [h.strip() for h in os.getenv("CORS_HEADERS", "").split(",") if h.strip()]
+
 # Get the current environment (development, production, etc.)
 APP_ENV = os.getenv("APP_ENV", "development")
 
 # create the fastapi application instance.
 app = FastAPI(
-    title="NYC Traffic Violation Notices API",
     version="1.? (i lost count)",
     summary="API for managing NYC traffic violation notices",
     description="This API allows users to manage and retrieve information about NYC traffic violation notices. yippee",
@@ -29,13 +33,10 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://127.0.0.1:5500",
-        "http://localhost:5500",
-    ],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE"],
-    allow_headers=["Content-Type", "Authorization"],
+    allow_methods=CORS_METHODS,
+    allow_headers=CORS_HEADERS,
 )
 
 
