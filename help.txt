@@ -1,5 +1,0 @@
-api - pytest + testclient
-cors preflight
-
-happy path
-failure path

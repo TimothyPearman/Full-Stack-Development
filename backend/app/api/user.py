@@ -88,7 +88,7 @@ async def add_user(form: Annotated[UserRegister, Depends(get_user_register_form)
         form.email,
         form.phone
     )
-    logger.info("User created successfully with user_id=%s username=%s", new_user.id, new_user.username)
+    logger.info("User created successfully with user_id=%s username=%s", new_user.id, new_user.Username)
     return new_user
 
 @router.get("/get", response_model=User, summary="get current user profile")

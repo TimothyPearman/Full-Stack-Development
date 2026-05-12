@@ -1,6 +1,9 @@
 from fastapi.testclient import TestClient
 from backend.app.core import token
 from backend.main import app
+from playwright.sync_api import sync_playwright
+import uuid
+
 
 client = TestClient(app)
 
@@ -155,7 +158,6 @@ def test_get_clearance_invalid():
     res = client.post("/user/clearance", data=user_data)
     assert res.status_code == 401
 
-"""
 # happy path - test create user endpoint with valid data
 def test_create_user_valid():
     user_data = {
@@ -173,9 +175,8 @@ def test_create_user_valid():
         "phone": ""
     }
 
-    res = client.post("/user/create", data=user_data)  # <-- FIXED
+    res = client.post("/user/create", data=user_data)
     assert res.status_code == 200
-"""
 #! failure path - test create user endpoint with existing username
 def test_create_user_existing_username():
     user_data = {
@@ -271,7 +272,6 @@ def test_get_notice_invalid_token():
     get_res = client.get("/notices/me", headers={"Authorization": "Bearer InvalidToken"})
     assert get_res.status_code == 401
 
-
 # happy path - test get notice by id endpoint with valid token and existing notice
 def test_get_notice_by_id_valid():
     user_data = {
@@ -309,7 +309,6 @@ def test_get_notice_by_id_nonexistent():
     # Fetch non-existent notice by ID
     get_res = client.get("/notices/9999", headers={"Authorization": f"Bearer {token}"})
     assert get_res.status_code == 404
-
 
 # happy path - test update notice endpoint with valid token, existing notice, and valid data
 def test_update_notice_valid():
@@ -501,7 +500,6 @@ def test_update_notice_nonexistent():
     update_res = client.put("/notices/9999", headers={"Authorization": f"Bearer {token}"}, json=update_data)
     assert update_res.status_code == 404
 
-"""
 # happy path - test delete notice endpoint with valid token and valid data
 def test_delete_notice_valid():
     user_data = {
@@ -536,7 +534,6 @@ def test_delete_notice_nonexistent():
     # Delete non-existent notice
     delete_res = client.delete("/notices/9999", headers={"Authorization": f"Bearer {token}"})
     assert delete_res.status_code == 404
-"""
 
 # happy path - test create notice endpoint with valid token and valid data
 def test_create_notice_valid():
@@ -755,3 +752,246 @@ def test_get_notice_count_by_detachment_type_valid():
 def test_get_notice_count_by_detachment_type_invalid_token():
     count_res = client.get("/notices/counts/by-detachment", headers={"Authorization": "Bearer InvalidToken"})
     assert count_res.status_code == 401
+
+
+# user jouney test - driver/vehicle owner register
+# registers account and logs in
+def test_user_journey_civilian_register():
+    # open browser
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page()
+
+        # check info page
+        page.goto("http://127.0.0.1:5500/index.html#info")
+        assert "info" in page.url.lower()
+        assert page.locator("body").is_visible()
+
+        # check register page
+        page.goto("http://127.0.0.1:5500/index.html#register")
+        assert "register" in page.url.lower()
+        assert page.locator("body").is_visible()
+
+        page.route("**/user/create", lambda route: route.fulfill(
+            status=200,
+            content_type="application/json",
+            body='{"message":"created"}'
+        ))
+
+        # register
+        register_username = f"journey_user_{uuid.uuid4().hex[:8]}"
+        register_password = "Journey123"
+        page.locator("#register-username").fill(register_username)
+        page.locator("#register-password").fill(register_password)
+        page.locator("#register-password-confirm").fill(register_password)
+        page.locator("#register-full-name").fill("Journey User")
+        page.locator("#register-dob").fill("1995-01-01")
+        page.locator("#register-address").fill("1 Test Street")
+        page.locator("#register-license-number").fill("JRN123456")
+        page.locator("#register-license-postcode").fill("AB12 3CD")
+        page.locator("#register-ni-number").fill("AB123456C")
+        page.locator("#register-vehicle-registration").fill("JRN123")
+        page.locator("#register-email").fill("journey.user@example.com")
+        page.locator("#register-phone").fill("111-2222")
+        page.locator("#user-register-btn").click()
+        page.wait_for_function("window.location.hash === '#login'") # Wait for the URL hash to change to #login
+        assert "#login" in page.url.lower()
+        assert page.locator("#view-login").is_visible()
+
+        browser.close()
+
+# user jouney test - driver/vehicle owner login
+# logs in, checks dashboard, updates contact info, logs out
+def test_user_journey_civilian_login():
+    # open browser
+    with sync_playwright() as p: 
+        browser = p.chromium.launch()
+        page = browser.new_page()
+        
+        # check info page
+        page.goto("http://127.0.0.1:5500/index.html#info")
+        assert "info" in page.url.lower()
+        assert page.locator("body").is_visible()
+
+        # check login page
+        page.goto("http://127.0.0.1:5500/index.html#login")
+        assert "login" in page.url.lower()
+        assert page.locator("body").is_visible()
+
+        # check user login page
+        page.goto("http://127.0.0.1:5500/index.html#user-login")
+        assert "user-login" in page.url.lower()
+        assert page.locator("body").is_visible()
+
+        # log in
+        username_field = page.locator("#view-user-login #login-username")
+        password_field = page.locator("#view-user-login #login-password")
+        sign_in_button = page.locator("#user-login-btn")
+        username_field.fill("John_Smith")
+        password_field.fill("JPass")
+        sign_in_button.click()
+        page.wait_for_url("**/index.html#user-dash")  # Wait for redirect to dashboard
+        assert "user-dash" in page.url.lower()
+        assert page.locator("body").is_visible()
+
+
+        # check dashboard
+        page.goto("http://127.0.0.1:5500/index.html#user-dash")
+        assert "user-dash" in page.url.lower()
+        assert page.locator("body").is_visible()
+
+        # check profile
+        page.goto("http://127.0.0.1:5500/index.html#user-profile")
+        assert "user-profile" in page.url.lower()
+        assert page.locator("body").is_visible()
+
+        # update contact info
+        email_field = page.locator("#profile-email-input")
+        phone_field = page.locator("#profile-phone-input")
+        save_button = page.locator("#profile-update-btn")
+        email_field.fill("userjourney.test@example.com")
+        phone_field.fill("111-1111")
+        save_button.click()
+        page.wait_for_timeout(500)  # Wait a moment for the update to complete
+        # Verify the updated contact info is displayed on the profile page
+        assert page.locator("#profile-email").text_content() == "userjourney.test@example.com"
+        assert page.locator("#profile-phone").text_content() == "111-1111"
+
+        # logout
+        logout_button = page.locator("#user-logout-btn")
+        page.once("dialog", lambda dialog: dialog.accept())  # Accept the confirmation dialog
+        logout_button.click()
+        page.wait_for_timeout(500)  # Wait a moment for the logout to complete
+        assert "#info" in page.url
+
+        browser.close()
+
+# user jouney test - admin login
+# logs in, checks dashboard, creates notice, views notice, updates notice, deletes notice, logs out
+def test_user_journey_admin_login():
+    # open browser
+    with sync_playwright() as p: 
+        browser = p.chromium.launch()
+        page = browser.new_page()
+        
+        # check info page
+        page.goto("http://127.0.0.1:5500/index.html#info")
+        assert "info" in page.url.lower()
+        assert page.locator("body").is_visible()
+
+        # check login page
+        page.goto("http://127.0.0.1:5500/index.html#login")
+        assert "login" in page.url.lower()
+        assert page.locator("body").is_visible()
+
+        # check admin login page
+        page.goto("http://127.0.0.1:5500/index.html#admin-login")
+        assert "admin-login" in page.url.lower()
+        assert page.locator("body").is_visible()
+
+        # log in
+        username_field = page.locator("#view-admin-login #login-username")
+        password_field = page.locator("#view-admin-login #login-password")
+        sign_in_button = page.locator("#admin-login-btn")
+        username_field.fill("Timothy_Pearman")
+        password_field.fill("TPass")
+        sign_in_button.click()
+        page.wait_for_url("**/index.html#admin-dash")  # Wait for redirect to dashboard
+        assert "admin-dash" in page.url.lower()
+        assert page.locator("body").is_visible()
+
+        # check dashboard
+        page.goto("http://127.0.0.1:5500/index.html#admin-dash")
+        assert "admin-dash" in page.url.lower()
+        assert page.locator("body").is_visible()
+
+        # check management page
+        page.goto("http://127.0.0.1:5500/index.html#admin-management")
+        assert "admin-management" in page.url.lower()
+        assert page.locator("body").is_visible()
+
+        # check create page
+        page.goto("http://127.0.0.1:5500/index.html#admin-management-create")
+        assert "admin-management-create" in page.url.lower()
+        assert page.locator("body").is_visible()
+
+        # create
+        page.locator("#create-first-name").fill("TestJourney")
+        page.locator("#create-last-name").fill("Notice")
+        page.locator("#create-individual-address").fill("1 Test Street")
+        page.locator("#create-city").fill("Testville")
+        page.locator("#create-residence-state").fill("1")
+        page.locator("#create-zip-code").fill("12345")
+        page.locator("#create-drivers-license").fill("D1234567")
+        page.locator("#create-issued-state").fill("1")
+        page.locator("#create-birth-date").fill("1990-01-01T00:00")
+        page.locator("#create-height").fill("5'10\"")
+        page.locator("#create-weight").fill("180")
+        page.locator("#create-eyes").fill("Blue")
+        page.locator("#create-vehicle-license").fill("ABC123")
+        page.locator("#create-registered-state").fill("1")
+        page.locator("#create-colour").fill("Black")
+        page.locator("#create-year").fill("2020")
+        page.locator("#create-make").fill("Honda")
+        page.locator("#create-type").fill("Sedan")
+        page.locator("#create-vin").fill("12345")
+        page.locator("#create-registered-owner").fill("Test Owner")
+        page.locator("#create-vehicle-address").fill("1 Test Street")
+        page.locator("#create-violation-date").fill("2026-05-01T00:00")
+        page.locator("#create-district").fill("1")
+        page.locator("#create-detachment").fill("1")
+        page.locator("#create-miles").fill("100")
+        page.locator("#create-direction").fill("North")
+        page.locator("#create-town").fill("Testville")
+        page.locator("#create-road").fill("Main St")
+        page.locator("#create-violation").fill("Speed")
+        page.locator("#create-officers-signature").fill("TP")
+        page.locator("#create-personnel-number").fill("1")
+        page.locator("#create-action-selection").fill("1")
+        page.locator("#admin-create-citation-btn").click()
+        page.wait_for_timeout(500)  # Wait for create to complete
+        assert page.locator("#view-admin-management-create").is_visible()
+
+        # check view page
+        page.goto("http://127.0.0.1:5500/index.html#admin-management-view")
+        assert "admin-management-view" in page.url.lower()
+        assert page.locator("body").is_visible()
+
+        # view
+        page.locator("#admin-view-citation-id").fill("1")
+        page.locator("#admin-view-citation-record-btn").click()
+        page.wait_for_timeout(500)
+        assert page.locator("#view-admin-management-view").is_visible()
+
+        # check update page
+        page.goto("http://127.0.0.1:5500/index.html#admin-management-update")
+        assert "admin-management-update" in page.url.lower()
+
+        #update
+        assert page.locator("body").is_visible()
+        page.locator("#update-citation-id").fill("1")
+        page.locator("#update-first-name").fill("Updated")
+        page.locator("#update-violation").fill("Reckless")
+        page.locator("#admin-update-citation-btn").click()
+        page.wait_for_timeout(500)
+        assert page.locator("#view-admin-management-update").is_visible()
+
+        # check delete page
+        page.goto("http://127.0.0.1:5500/index.html#admin-management-delete")
+        assert "admin-management-delete" in page.url.lower()
+        assert page.locator("body").is_visible()
+
+        #delete
+        page.locator("#admin-delete-citation-id").fill("1")
+        page.locator("#admin-delete-citation-record-btn").click()
+        page.wait_for_timeout(500)
+        assert page.locator("#view-admin-management-delete").is_visible()
+
+        # logout
+        logout_button = page.locator("#admin-logout-btn")
+        page.once("dialog", lambda dialog: dialog.accept())  # Accept the confirmation dialog
+        logout_button.click()
+        page.wait_for_timeout(500)  # Wait a moment for the logout to complete
+        assert "#info" in page.url
+
+        browser.close()

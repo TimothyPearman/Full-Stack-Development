@@ -40,6 +40,10 @@ function showToast(message, duration = 3000) {
     }, duration);
 }
 
+/**
+ * setBreadcrumb(crumbs) – updates the breadcrumb navigation based on the provided crumbs array.
+ * @param {Array} crumbs - An array of breadcrumb objects, where each object
+ */
 function setBreadcrumb(crumbs) {
     // crumbs: array of {label, route, params} objects
     // Last crumb is current page (not a link)
@@ -244,7 +248,7 @@ function navigateTo(route, params = {}) {
     }
 }
 
-// Map of route names to view IDs
+// map of route names to view IDs
 const ROUTE_TO_VIEW = {
 	// landing page views
     'info': 'view-info',
@@ -294,10 +298,10 @@ function routeFromHash() {
     navigateTo(route, { id });
 }
 
-// Listen for hash changes (browser back / forward, or manual URL edits)
+// listen for hash changes (browser back / forward, or manual URL edits)
 window.addEventListener('hashchange', routeFromHash);
 
-// Handle browser back / forward buttons
+// handle browser back / forward buttons
 window.addEventListener('popstate', function(event) {
     if (event.state && event.state.route) {
         navigateTo(event.state.route, event.state.params || {});
@@ -306,7 +310,10 @@ window.addEventListener('popstate', function(event) {
     }
 });
 
-// Sets visibility of nav bars based on current route
+/**
+ * setVisibleNav(navIds) – shows the specified nav bars and hides the others.
+ * @param {string|string[]} navIds - a single nav ID or an array of nav IDs to show (e.g. 'main-nav' or ['main-nav', 'user-nav'])
+ */
 function setVisibleNav(navIds) {
     const visibleNavs = Array.isArray(navIds) ? navIds : [navIds];
 
@@ -319,7 +326,10 @@ function setVisibleNav(navIds) {
     });
 }
 
-// Updates the 'active' class on nav links based on the current route
+/**
+ * updateActiveNav(route) – toggles the 'active' class on navigation links based on the current route.
+ * @param {string} route - the current route name (e.g. 'info', 'user-dash', 'admin-management')
+ */
 function updateActiveNav(route) {
     // Toggle 'active' class on nav links based on their data-view matching the current route
     document.querySelectorAll('.nav-link').forEach(link => {
@@ -327,7 +337,7 @@ function updateActiveNav(route) {
     });
 }
 
-// Wait for DOM to load
+// wait for DOM to load
 document.addEventListener('DOMContentLoaded', function() {
     // attach click listeners to nav links
     document.querySelectorAll('.nav-link').forEach(link => {
@@ -450,7 +460,11 @@ document.addEventListener('DOMContentLoaded', function() {
     routeFromHash();
 });
 
-// Authentication handlers
+// authentication handlers
+/**
+ * handleLogin(loginRole) – processes login for either user or admin based on the loginRole parameter.
+ * @param {string} loginRole - either 'user' or 'admin' to determine which login form to process
+ */
 function handleLogin(loginRole) {
     // get the appropriate login view based on role
     const loginView = document.getElementById(loginRole === 'admin' ? 'view-admin-login' : 'view-user-login');
@@ -562,7 +576,7 @@ function handleLogin(loginRole) {
         });
 }
 
-// Logout handler
+// logout handler
 function handleLogout() {
     confirmAction(
         'Are you sure you want to log out?',
@@ -589,7 +603,7 @@ function confirmAction(message, callback) {
     }
 }
 
-// Registration handler
+// registration handler
 function handleRegister() {
     // get the registration view
     const registerView = document.getElementById('view-register');
@@ -725,7 +739,7 @@ function handleRegister() {
     });
 }
 
-// Profile handler
+// profile handler
 function loadUserProfile() {
     // Check if user is authenticated
     if (!state.token) {
@@ -796,6 +810,7 @@ function loadUserProfile() {
     });
 }
 
+// update contact info handler
 function handleUpdateUserContactInfo() {
     if (!state.token) {
         showToast('Please log in to update your profile.', 3000);
@@ -856,6 +871,11 @@ function handleUpdateUserContactInfo() {
     });
 }
 
+/**
+ * formatNoticeValue(key, value) – formats notice field values for display, handling null/empty values and date formatting.
+ * @param {string} key - the field name (used to detect date fields)
+ * @param {*} value - the field value to format
+ */
 function formatNoticeValue(key, value) {
     if (value === null || value === undefined || value === '') {
         return '-';
@@ -875,6 +895,10 @@ function formatNoticeValue(key, value) {
     return String(value);
 }
 
+/**
+ * toggleNoticeDetails(button) – toggles the visibility of the notice details panel when a notice header is clicked.
+ * @param {HTMLElement} button - the button element that was clicked to toggle the notice details
+ */
 function toggleNoticeDetails(button) {
     // if button is null or doesn't have data-target attribute, do nothing
     if (!button) {
@@ -900,6 +924,11 @@ function toggleNoticeDetails(button) {
     button.querySelector('.notice-toggle-icon').textContent = isExpanded ? '+' : '−';
 }
 
+/**
+ * buildNoticeFieldsHtml(notice) – generates HTML for the notice details fields, formatting values appropriately.
+ * @param {object} notice - the notice object containing field key-value pairs to display
+ * @return {string} - HTML string representing the notice fields for display in the details panel
+ */
 function buildNoticeFieldsHtml(notice) {
     return Object.entries(notice)
         .map(function([key, value]) {
@@ -912,6 +941,12 @@ function buildNoticeFieldsHtml(notice) {
         .join('');
 }
 
+/**
+ * buildNoticeHeaderHtml(displayId, detailsId) – generates HTML for the notice header, which includes a toggle button to show/hide the details panel.
+ * @param {number|string} displayId - a user-friendly identifier for the notice (e.g. "Citation ID: 3") to display in the header
+ * @param {string} detailsId - the id of the details panel that this header will toggle
+ * @return {string} - HTML string representing the notice header with a toggle button
+ */
 function buildNoticeHeaderHtml(displayId, detailsId) {
     return `<button type="button" class="notice-toggle" data-target="${detailsId}" aria-expanded="false">
         <span class="notice-toggle-title">Citation ID: ${displayId}</span>
@@ -922,6 +957,12 @@ function buildNoticeHeaderHtml(displayId, detailsId) {
     </button>`;
 }
 
+/**
+ * buildNoticeArticleHtml(notice, displayId) – generates the full HTML for a notice card, including the header and the details panel.
+ * @param {object} notice - the notice object containing all fields to display
+ * @param {number|string} displayId - a user-friendly identifier for the notice (e.g. "Citation ID: 3") to display in the header
+ * @return {string} - HTML string representing the complete notice card with header and details
+ */
 function buildNoticeArticleHtml(notice, displayId) {
     const noticeId = notice.NoticeID != null ? String(notice.NoticeID) : String(state.notices.indexOf(notice));
     const detailsId = 'notice-details-' + noticeId;
@@ -936,6 +977,12 @@ function buildNoticeArticleHtml(notice, displayId) {
     </article>`;
 }
 
+/**
+ * buildStaticNoticeArticleHtml(notice, displayId) – generates HTML for a notice card without collapsible details (used for admin view by ID).
+ * @param {object} notice - the notice object containing all fields to display
+ * @param {number|string} displayId - a user-friendly identifier for the notice (e.g. "Citation ID: 3") to display in the header
+ * @return {string} - HTML string representing the complete notice card with all details shown
+ */
 function buildStaticNoticeArticleHtml(notice, displayId) {
     return `<article class="notice-card">
         <div class="notice-toggle" style="cursor:default;">
@@ -950,6 +997,7 @@ function buildStaticNoticeArticleHtml(notice, displayId) {
     </article>`;
 }
 
+// render user notices in the dashboard, showing a message if no notices are found or if there was an error loading them
 function renderUserNotices() {
     const noticesContainer = document.getElementById('user-dashboard-notices');
     const statusElement = document.getElementById('user-dashboard-status');
@@ -982,6 +1030,7 @@ function renderUserNotices() {
     }).join('');
 }
 
+// load user notices for dashboard
 function loadUserNotices() {
     // Check if user is authenticated
     if (!state.token) {
@@ -1040,6 +1089,7 @@ function loadUserNotices() {
     });
 }
 
+// loads and displays a specific citation by ID
 function loadAdminCitationById() {
     if (!state.token) {
         showToast('Please log in as an administrator to view citations.', 3000);
@@ -1099,6 +1149,7 @@ function loadAdminCitationById() {
     });
 }
 
+// loads a specific citation by ID and displays it with a delete confirmation button
 function loadAdminCitationForDelete() {
     if (!state.token) {
         showToast('Please log in as an administrator to delete citations.', 3000);
@@ -1162,6 +1213,10 @@ function loadAdminCitationForDelete() {
     });
 }
 
+/**
+ * handleConfirmDelete(citationId) – sends a DELETE request to the API to delete the specified citation, showing success or error messages based on the response.
+ * @param {number} citationId - the ID of the citation to delete
+ */
 function handleConfirmDelete(citationId) {
     if (!state.token) {
         showToast('Please log in as an administrator to delete citations.', 3000);
@@ -1201,7 +1256,10 @@ function handleConfirmDelete(citationId) {
     });
 }
 
-// ── Admin stats
+/**
+ * renderAdminStats(stats) – takes the statistics data object and renders it into the admin dashboard, handling cases where data may be missing or empty.
+ * @param {object} stats - the statistics data object containing total counts and breakdowns by violation, district, and detachment
+ */
 function renderAdminStats(stats) {
     const totalEl = document.getElementById('stat-total-value');
     const byViolationEl = document.getElementById('stat-by-violation-list');
@@ -1262,6 +1320,7 @@ function renderAdminStats(stats) {
     }
 }
 
+// loads statistics data for the admin dashboard
 function loadAdminStats() {
     if (!state.token) {
         showToast('Please log in as an administrator to view statistics.', 3000);
@@ -1306,7 +1365,7 @@ function loadAdminStats() {
         });
 }
 
-// Collect create payload from create inputs. All fields required for creation.
+// collect create payload from create inputs
 function collectCreatePayload() {
     const mapping = {
         'create-first-name': 'FirstName',
@@ -1366,6 +1425,7 @@ function collectCreatePayload() {
     return payload;
 }
 
+// handles submission of the create citation form
 function handleSubmitCreate() {
     if (!state.token) {
         showToast('Please log in as an administrator to create citations.', 3000);
@@ -1409,7 +1469,7 @@ function handleSubmitCreate() {
     });
 }
 
-// Collect update payload from update inputs. Only include fields with values.
+// collect update payload from update inputs. Only include fields with values.
 function collectUpdatePayload() {
     const mapping = {
         'update-first-name': 'FirstName',
@@ -1479,6 +1539,7 @@ function collectUpdatePayload() {
     return payload;
 }
 
+// handles submission of the update citation form
 function handleSubmitUpdate() {
     // prefer explicit update id input if present, otherwise fall back to admin-view id
     const idInputs = ['update-citation-id', 'admin-view-citation-id', 'view-citation-id'];
